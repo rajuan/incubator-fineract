@@ -1192,6 +1192,14 @@ public class Loan extends AbstractPersistable<Long> {
             }
             installment.updateAccrualPortion(interest, fee, penality);
         }
+    	LoanRepaymentScheduleInstallment lastInstallment = this.repaymentScheduleInstallments
+    			.get(this.repaymentScheduleInstallments.size()-1);
+        for (LoanTransaction loanTransaction : accruals) {
+        	if(loanTransaction.getTransactionDate().isAfter(lastInstallment.getDueDate())
+            		&& !loanTransaction.isReversed()){
+            	loanTransaction.reverse();
+            }
+        }
     }
 
     private void updateAccrualsForNonPeriodicAccruals(final Collection<LoanTransaction> accruals, final AppUser currentUser) {

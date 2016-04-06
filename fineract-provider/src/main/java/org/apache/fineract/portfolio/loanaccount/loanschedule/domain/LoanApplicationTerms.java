@@ -1477,4 +1477,18 @@ public final class LoanApplicationTerms {
         return isSkipRepaymentOnFirstDayOfMonth;
     }
 
+	public Money getTotalDisbursedAmount() {
+        Money disbursedAmount = Money.zero(getCurrency());
+        if (isMultiDisburseLoan()) {
+        	for(DisbursementData disbursement: getDisbursementDatas()){
+        		if(disbursement.isDisbursed()){
+        			disbursedAmount = disbursedAmount.plus(disbursement.amount());
+        		}
+        	}
+        } else {
+            disbursedAmount = getPrincipal();
+        }
+        return disbursedAmount;
+	}
+
 }

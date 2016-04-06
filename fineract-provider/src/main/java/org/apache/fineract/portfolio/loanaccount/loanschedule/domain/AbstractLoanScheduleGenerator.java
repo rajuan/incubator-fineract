@@ -2165,6 +2165,9 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
                 // process the installment only if recalculate from date is
                 // greater than due date
                 if (installment.getDueDate().isAfter(lastInstallmentDate)) {
+                	if(totalCumulativePrincipal.isGreaterThanOrEqualTo(loanApplicationTerms.getTotalDisbursedAmount())){
+                		break;
+                	}
                     LocalDate previousRepaymentDate = actualRepaymentDate;
                     actualRepaymentDate = this.scheduledDateGenerator.generateNextRepaymentDate(actualRepaymentDate, loanApplicationTerms,
                             isFirstRepayment, holidayDetailDTO);
