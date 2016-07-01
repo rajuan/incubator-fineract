@@ -26,6 +26,7 @@ import org.apache.fineract.organisation.office.data.OfficeData;
 import org.apache.fineract.organisation.staff.data.StaffData;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.client.data.ClientData;
+import org.apache.fineract.portfolio.group.domain.GroupTypeEnum;
 import org.joda.time.LocalDate;
 
 /**
@@ -69,13 +70,16 @@ public class GroupGeneralData {
     private final GroupRoleData selectedRole;
     private final Collection<CodeValueData> closureReasons;
     private final GroupTimelineData timeline;
+    
+	private final Collection<EnumOptionData> groupTypeOptions;
+	private final EnumOptionData groupType;
 
     public static GroupGeneralData lookup(final Long groupId, final String accountNo, final String groupName) {
         final Collection<ClientData> clientMembers = null;
         final Collection<GroupRoleData> groupRoles = null;
         final Collection<CodeValueData> closureReasons = null;
         return new GroupGeneralData(groupId, accountNo, groupName, null, null, null, null, null, null, null, null, null, null, null, clientMembers, null, null,
-                null, null, null, groupRoles, null, null, null, null, closureReasons, null);
+                null, null, null, groupRoles, null, null, null, null, closureReasons, null, null, null);
     }
 
     public static GroupGeneralData template(final Long officeId, final Long centerId, final String accountNo, final String centerName, final Long staffId,
@@ -86,10 +90,12 @@ public class GroupGeneralData {
         final Collection<ClientData> clientMembers = null;
         final Collection<GroupRoleData> groupRoles = null;
         final Collection<CodeValueData> closureReasons = null;
+        final Collection<EnumOptionData> groupTypeOptions = GroupTypeEnum.getGroupTypeOptions();
+
 
         return new GroupGeneralData(null, accountNo , null, null, null, null, officeId, null, centerId, centerName, staffId, staffName, null, null,
                 clientMembers, null, centerOptions, officeOptions, staffOptions, clientOptions, groupRoles, availableRoles, null, null, null,
-                closureReasons, null);
+                closureReasons, null, null, groupTypeOptions);
     }
 
     public static GroupGeneralData withTemplate(final GroupGeneralData templatedGrouping, final GroupGeneralData grouping) {
@@ -98,7 +104,7 @@ public class GroupGeneralData {
                 grouping.hierarchy, grouping.groupLevel, grouping.clientMembers, grouping.activeClientMembers, templatedGrouping.centerOptions, templatedGrouping.officeOptions,
                 templatedGrouping.staffOptions, templatedGrouping.clientOptions, grouping.groupRoles, templatedGrouping.availableRoles,
                 grouping.selectedRole, grouping.calendarsData, grouping.collectionMeetingCalendar, grouping.closureReasons,
-                templatedGrouping.timeline);
+                templatedGrouping.timeline, grouping.groupType, grouping.groupTypeOptions);
     }
 
     public static GroupGeneralData withAssocations(final GroupGeneralData grouping, final Collection<ClientData> membersOfGroup,
@@ -108,12 +114,13 @@ public class GroupGeneralData {
                 grouping.officeId, grouping.officeName, grouping.centerId, grouping.centerName, grouping.staffId, grouping.staffName,
                 grouping.hierarchy, grouping.groupLevel, membersOfGroup, activeClientMembers, grouping.centerOptions, grouping.officeOptions, grouping.staffOptions,
                 grouping.clientOptions, groupRoles, grouping.availableRoles, grouping.selectedRole, calendarsData,
-                collectionMeetingCalendar, grouping.closureReasons, grouping.timeline);
+                collectionMeetingCalendar, grouping.closureReasons, grouping.timeline, grouping.groupType, grouping.groupTypeOptions);
     }
 
     public static GroupGeneralData instance(final Long id, final String accountNo, final String name, final String externalId, final EnumOptionData status,
             final LocalDate activationDate, final Long officeId, final String officeName, final Long centerId, final String centerName,
-            final Long staffId, final String staffName, final String hierarchy, final String groupLevel, final GroupTimelineData timeline) {
+            final Long staffId, final String staffName, final String hierarchy, final String groupLevel, final GroupTimelineData timeline, 
+            final EnumOptionData groupType) {
 
         final Collection<ClientData> clientMembers = null;
         final Collection<ClientData> activeClientMembers = null;
@@ -127,10 +134,11 @@ public class GroupGeneralData {
         final Collection<CalendarData> calendarsData = null;
         final CalendarData collectionMeetingCalendar = null;
         final Collection<CodeValueData> closureReasons = null;
+        final Collection<EnumOptionData> groupTypeOptions = null;
 
         return new GroupGeneralData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName, staffId,
                 staffName, hierarchy, groupLevel, clientMembers, activeClientMembers, centerOptions, officeOptions, staffOptions,
-                clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, timeline);
+                clientOptions, groupRoles, availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, timeline, groupType, groupTypeOptions);
     }
 
     private GroupGeneralData(final Long id, final String accountNo, final String name, final String externalId, final EnumOptionData status,
@@ -141,7 +149,8 @@ public class GroupGeneralData {
             final Collection<ClientData> clientOptions, final Collection<GroupRoleData> groupRoles,
             final Collection<CodeValueData> availableRoles, final GroupRoleData role,
             final Collection<CalendarData> calendarsData, final CalendarData collectionMeetingCalendar,
-            final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline) {
+            final Collection<CodeValueData> closureReasons, final GroupTimelineData timeline, final EnumOptionData groupType, 
+            final Collection<EnumOptionData> groupTypeOptions) {
         this.id = id;
         this.accountNo = accountNo;
         this.name = name;
@@ -153,6 +162,8 @@ public class GroupGeneralData {
             this.active = null;
         }
         this.activationDate = activationDate;
+        
+        this.groupType = groupType;
 
         this.officeId = officeId;
         this.officeName = officeName;
@@ -183,6 +194,7 @@ public class GroupGeneralData {
         this.collectionMeetingCalendar = collectionMeetingCalendar;
         this.closureReasons = closureReasons;
         this.timeline = timeline;
+        this.groupTypeOptions = groupTypeOptions;
     }
 
     public Long getId() {
@@ -218,7 +230,8 @@ public class GroupGeneralData {
                 grouping.officeId, grouping.officeName, grouping.centerId, grouping.centerName, grouping.staffId, grouping.staffName,
                 grouping.hierarchy, grouping.groupLevel, grouping.clientMembers, grouping.activeClientMembers, grouping.centerOptions,
                 grouping.officeOptions, grouping.staffOptions, grouping.clientOptions, grouping.groupRoles, grouping.availableRoles,
-                selectedRole, grouping.calendarsData, grouping.collectionMeetingCalendar, grouping.closureReasons, null);
+                selectedRole, grouping.calendarsData, grouping.collectionMeetingCalendar, grouping.closureReasons, null, 
+                grouping.groupType, grouping.groupTypeOptions);
     }
 
     public static GroupGeneralData withClosureReasons(final Collection<CodeValueData> closureReasons) {
@@ -250,10 +263,14 @@ public class GroupGeneralData {
 
         return new GroupGeneralData(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName, staffId,
                 staffName, hierarchy, groupLevel, clientMembers, activeClientMembers, centerOptions, officeOptions, staffOptions, clientOptions, groupRoles,
-                availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, null);
+                availableRoles, role, calendarsData, collectionMeetingCalendar, closureReasons, null, null, null);
     }
 
     public Collection<ClientData> clientMembers() {
         return this.clientMembers;
+    }
+    
+    public EnumOptionData getGroupType(){
+    	return this.groupType;
     }
 }

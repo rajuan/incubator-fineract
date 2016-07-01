@@ -48,6 +48,7 @@ public final class SearchParameters {
     private final Long productId;
     private final Long categoryId;
     private final boolean isSelfUser;
+	private final Integer groupType;
 
     public static SearchParameters from(final String sqlSearch, final Long officeId, final String externalId, final String name,
             final String hierarchy) {
@@ -77,7 +78,7 @@ public final class SearchParameters {
 
     public static SearchParameters forGroups(final String sqlSearch, final Long officeId, final Long staffId, final String externalId,
             final String name, final String hierarchy, final Integer offset, final Integer limit, final String orderBy,
-            final String sortOrder, final Boolean orphansOnly) {
+            final String sortOrder, final Boolean orphansOnly, final Integer groupType) {
 
         final Integer maxLimitAllowed = getCheckedLimit(limit);
         final String accountNo = null;
@@ -86,7 +87,7 @@ public final class SearchParameters {
         final boolean isSelfUser = false;
 
         return new SearchParameters(sqlSearch, officeId, externalId, name, hierarchy, null, null, offset, maxLimitAllowed, orderBy,
-                sortOrder, staffId, accountNo, loanId, savingsId, orphansOnly, isSelfUser);
+                sortOrder, staffId, accountNo, loanId, savingsId, orphansOnly, isSelfUser, groupType);
     }
 
     public static SearchParameters forOffices(final String orderBy, final String sortOrder) {
@@ -234,8 +235,41 @@ public final class SearchParameters {
         this.productId = null;
         this.categoryId = null;
         this.isSelfUser = isSelfUser;
+        this.groupType = null;
 
     }
+
+	private SearchParameters(final String sqlSearch, final Long officeId,
+			final String externalId, final String name, final String hierarchy,
+			final String firstname, final String lastname,
+			final Integer offset, final Integer limit, final String orderBy,
+			final String sortOrder, final Long staffId, final String accountNo,
+			final Long loanId, final Long savingsId, final Boolean orphansOnly,
+			final boolean isSelfUser, final Integer groupType) {
+		this.sqlSearch = sqlSearch;
+		this.officeId = officeId;
+		this.externalId = externalId;
+		this.name = name;
+		this.hierarchy = hierarchy;
+		this.firstname = firstname;
+		this.lastname = lastname;
+		this.offset = offset;
+		this.limit = limit;
+		this.orderBy = orderBy;
+		this.sortOrder = sortOrder;
+		this.staffId = staffId;
+		this.accountNo = accountNo;
+		this.loanId = loanId;
+		this.savingsId = savingsId;
+		this.orphansOnly = orphansOnly;
+		this.currencyCode = null;
+		this.provisioningEntryId = null;
+		this.productId = null;
+		this.categoryId = null;
+		this.isSelfUser = isSelfUser;
+		this.groupType = groupType;
+
+	}
 
     private SearchParameters(final Long provisioningEntryId, final Long officeId, final Long productId, final Long categoryId,
             final Integer offset, final Integer limit) {
@@ -260,6 +294,7 @@ public final class SearchParameters {
         this.productId = productId;
         this.categoryId = categoryId;
         this.isSelfUser = false;
+        this.groupType = null;
 
     }
 
@@ -288,6 +323,7 @@ public final class SearchParameters {
         this.productId = null;
         this.categoryId = null;
         this.isSelfUser = false;
+        this.groupType = null;
     }
 
     public boolean isOrderByRequested() {
@@ -441,6 +477,10 @@ public final class SearchParameters {
 
     public boolean isSelfUser() {
         return this.isSelfUser;
+    }
+    
+    public Integer getGroupType(){
+    	return this.groupType;
     }
 
 }

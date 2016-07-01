@@ -2736,4 +2736,72 @@ public class CommandWrapperBuilder {
         return this;
 	}
 
+	public CommandWrapperBuilder initiateCycle(final Long groupId) {
+		this.actionName = "CREATE";
+		this.entityName = "SGCYCLE";
+		this.entityId = groupId;
+		this.href = "/groups/" + groupId + "/cycle";
+		return this;
+	}
+
+	public CommandWrapperBuilder activateCycle(final Long groupId) {
+		this.actionName = "ACTIVATE";
+		this.entityName = "SGCYCLE";
+		this.entityId = groupId;
+		this.href = "/groups/" + groupId + "/cycle?command=activate";
+		return this;
+	}
+
+	public CommandWrapperBuilder shareoutCycle(final Long groupId) {
+		this.actionName = "SHAREOUT";
+		this.entityName = "SGCYCLE";
+		this.entityId = groupId;
+		this.href = "/groups/" + groupId + "/cycle?command=shareout";
+		return this;
+	}
+
+	public CommandWrapperBuilder shareoutCloseCycle(final Long groupId) {
+		this.actionName = "SHAREOUTCLOSE";
+		this.entityName = "SGCYCLE";
+		this.entityId = groupId;
+		this.href = "/groups/" + groupId + "/cycle?command=shareoutclose";
+		return this;
+	}
+
+	public CommandWrapperBuilder updateCycle(final Long groupId) {
+		this.actionName = "UPDATE";
+		this.entityName = "SGCYCLE";
+		this.entityId = groupId;
+		this.href = "/groups/" + groupId + "/cycle";
+		return this;
+	}
+
+	public CommandWrapperBuilder createSGFund(final Long groupId) {
+		this.actionName = "CREATE";
+		this.entityName = "SGFUND";
+		this.entityId = groupId;
+		this.href = "/groups/" + groupId + "/funds";
+		return this;
+	}
+
+	public CommandWrapperBuilder updateSGFund(final Long groupId,
+			final Long fundId) {
+		this.actionName = "UPDATE";
+		this.entityName = "SGFUND";
+		this.entityId = fundId;
+		this.groupId = groupId;
+		this.href = "/groups/" + groupId + "/funds/" + fundId;
+		return this;
+	}
+
+	public CommandWrapperBuilder deleteSGFund(final Long groupId,
+			final Long fundId) {
+		this.actionName = "DELETE";
+		this.entityName = "SGFUND";
+		this.entityId = fundId;
+		this.groupId = groupId;
+		this.href = "/groups/" + groupId + "/funds/" + fundId;
+		return this;
+	}
+
 }

@@ -142,6 +142,11 @@ public final class GroupingTypesDataValidator {
             final String externalId = this.fromApiJsonHelper.extractStringNamed(GroupingTypesApiConstants.externalIdParamName, element);
             baseDataValidator.reset().parameter(GroupingTypesApiConstants.externalIdParamName).value(externalId).notExceedingLengthOf(100);
         }
+        
+        if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.groupTypeParamName, element)) {
+            final Integer groupType = this.fromApiJsonHelper.extractIntegerSansLocaleNamed(GroupingTypesApiConstants.groupTypeParamName, element);
+            baseDataValidator.reset().parameter(GroupingTypesApiConstants.groupTypeParamName).value(groupType).isOneOfTheseValues(1,2);
+        }
 
         final Long centerId = this.fromApiJsonHelper.extractLongNamed(GroupingTypesApiConstants.centerIdParamName, element);
         baseDataValidator.reset().parameter(GroupingTypesApiConstants.centerIdParamName).value(centerId).notNull().integerGreaterThanZero();
@@ -204,6 +209,11 @@ public final class GroupingTypesDataValidator {
         if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.externalIdParamName, element)) {
             final String externalId = this.fromApiJsonHelper.extractStringNamed(GroupingTypesApiConstants.externalIdParamName, element);
             baseDataValidator.reset().parameter(GroupingTypesApiConstants.externalIdParamName).value(externalId).notExceedingLengthOf(100);
+        }
+
+        if (this.fromApiJsonHelper.parameterExists(GroupingTypesApiConstants.groupTypeParamName, element)) {
+            final Integer groupType = this.fromApiJsonHelper.extractIntegerSansLocaleNamed(GroupingTypesApiConstants.groupTypeParamName, element);
+            baseDataValidator.reset().parameter(GroupingTypesApiConstants.groupTypeParamName).value(groupType).isOneOfTheseValues(1,2);
         }
 
         // office is inherited from center

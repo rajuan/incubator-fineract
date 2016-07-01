@@ -147,6 +147,7 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         sqlBuilder.append("select SQL_CALC_FOUND_ROWS ");
         sqlBuilder.append(this.allGroupTypesDataMapper.schema());
         sqlBuilder.append(" where o.hierarchy like ?");
+        sqlBuilder.append(" and g.group_type_enum = ? ");
 
         final String extraCriteria = getGroupExtraCriteria(searchParameters);
 
@@ -167,7 +168,7 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
 
         final String sqlCountRows = "SELECT FOUND_ROWS()";
         return this.paginationHelper.fetchPage(this.jdbcTemplate, sqlCountRows, sqlBuilder.toString(),
-                new Object[] { hierarchySearchString }, this.allGroupTypesDataMapper);
+                new Object[] { hierarchySearchString, searchParameters.getGroupType() }, this.allGroupTypesDataMapper);
     }
 
     @Override
@@ -180,6 +181,7 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
         sqlBuilder.append("select ");
         sqlBuilder.append(this.allGroupTypesDataMapper.schema());
         sqlBuilder.append(" where o.hierarchy like ?");
+        sqlBuilder.append(" and g.group_type_enum = ? ");
 
         final String extraCriteria = getGroupExtraCriteria(searchParameters);
 
@@ -195,7 +197,8 @@ public class GroupReadPlatformServiceImpl implements GroupReadPlatformService {
             sqlBuilder.append(parameters.limitSql());
         }
 
-        return this.jdbcTemplate.query(sqlBuilder.toString(), this.allGroupTypesDataMapper, new Object[] { hierarchySearchString });
+        return this.jdbcTemplate.query(sqlBuilder.toString(), this.allGroupTypesDataMapper, 
+        		new Object[] { hierarchySearchString, searchParameters.getGroupType() });
     }
 
     // 'g.' preffix because of ERROR 1052 (23000): Column 'column_name' in where

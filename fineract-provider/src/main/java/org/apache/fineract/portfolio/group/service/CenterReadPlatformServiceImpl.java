@@ -63,6 +63,7 @@ import org.apache.fineract.portfolio.group.data.CenterData;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.data.GroupTimelineData;
 import org.apache.fineract.portfolio.group.data.StaffCenterData;
+import org.apache.fineract.portfolio.group.domain.GroupTypeEnum;
 import org.apache.fineract.portfolio.group.domain.GroupTypes;
 import org.apache.fineract.portfolio.group.domain.GroupingTypeEnumerations;
 import org.apache.fineract.portfolio.group.exception.CenterNotFoundException;
@@ -164,6 +165,7 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
     }
 
     private static final String sqlQuery = "g.id as id, g.account_no as accountNo, g.external_id as externalId, g.display_name as name, "
+            + "g.group_type_enum as groupType, " //
             + "g.office_id as officeId, o.name as officeName, " //
             + "g.staff_id as staffId, s.display_name as staffName, " //
             + "g.status_enum as statusEnum, g.activation_date as activationDate, " //
@@ -330,6 +332,9 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
             final EnumOptionData status = ClientEnumerations.status(statusEnum);
             final LocalDate activationDate = JdbcSupport.getLocalDate(rs, "activationDate");
 
+            final Integer groupTypeEnum = JdbcSupport.getInteger(rs, "groupType");
+            final EnumOptionData groupType = GroupTypeEnum.getEnumOptionData(groupTypeEnum);
+
             final Long officeId = rs.getLong("officeId");
             final String officeName = rs.getString("officeName");
             final Long staffId = JdbcSupport.getLong(rs, "staffId");
@@ -356,7 +361,7 @@ public class CenterReadPlatformServiceImpl implements CenterReadPlatformService 
                     closedByUsername, closedByFirstname, closedByLastname);
 
             return GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName, null, null, staffId,
-                    staffName, hierarchy, groupLevel, timeline);
+                    staffName, hierarchy, groupLevel, timeline, groupType);
         }
     }
 

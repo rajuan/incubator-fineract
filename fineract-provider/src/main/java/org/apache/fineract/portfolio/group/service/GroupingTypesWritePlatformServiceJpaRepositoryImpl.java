@@ -208,6 +208,11 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                 final CommandWrapper commandWrapper = new CommandWrapperBuilder().associateClientsToGroup(newGroup.getId()).build();
                 rollbackTransaction = this.commandProcessingService.validateCommand(commandWrapper, currentUser);
             }
+            
+            if(command.hasParameter(GroupingTypesApiConstants.groupTypeParamName)){
+            	final Integer groupType = command.integerValueSansLocaleOfParameterNamed(GroupingTypesApiConstants.groupTypeParamName);
+            	newGroup.setGroupType(groupType);
+            }
 
             // pre-save to generate id for use in group hierarchy
             this.groupRepository.save(newGroup);

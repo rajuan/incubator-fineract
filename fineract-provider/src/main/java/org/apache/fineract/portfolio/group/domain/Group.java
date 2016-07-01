@@ -76,6 +76,12 @@ public final class Group extends AbstractPersistable<Long> {
     @Column(name = "status_enum", nullable = false)
     private Integer status;
 
+    /**
+     * A value from {@link GroupTypeEnum}.
+     */
+    @Column(name = "group_type_enum", nullable = false)
+    private Integer groupType = 1;
+
     @Column(name = "activation_date", nullable = true)
     @Temporal(TemporalType.DATE)
     private Date activationDate;
@@ -739,5 +745,13 @@ public final class Group extends AbstractPersistable<Long> {
     public void updateAccountNo(final String accountIdentifier) {
         this.accountNumber = accountIdentifier;
         this.accountNumberRequiresAutoGeneration = false;
+    }
+    
+    public Integer getGroupType(){
+    	return this.groupType;
+    }
+    
+    public void setGroupType(final Integer groupType){
+    	this.groupType = groupType;
     }
 }

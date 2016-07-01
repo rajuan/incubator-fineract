@@ -26,6 +26,7 @@ import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.portfolio.client.domain.ClientEnumerations;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.data.GroupTimelineData;
+import org.apache.fineract.portfolio.group.domain.GroupTypeEnum;
 import org.joda.time.LocalDate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -39,6 +40,7 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
     public AllGroupTypesDataMapper() {
         final StringBuilder sqlBuilder = new StringBuilder(400);
         sqlBuilder.append("g.id as id, g.account_no as accountNumber, g.external_id as externalId, g.display_name as name, ");
+        sqlBuilder.append("g.group_type_enum as groupType, ");
         sqlBuilder.append("g.office_id as officeId, o.name as officeName, ");
         sqlBuilder.append("g.parent_id as centerId, pg.display_name as centerName, ");
         sqlBuilder.append("g.staff_id as staffId, s.display_name as staffName, ");
@@ -86,6 +88,9 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
         final Integer statusEnum = JdbcSupport.getInteger(rs, "statusEnum");
         final EnumOptionData status = ClientEnumerations.status(statusEnum);
         final LocalDate activationDate = JdbcSupport.getLocalDate(rs, "activationDate");
+        
+        final Integer groupTypeEnum = JdbcSupport.getInteger(rs, "groupType");
+        final EnumOptionData groupType = GroupTypeEnum.getEnumOptionData(groupTypeEnum);
 
         final Long officeId = JdbcSupport.getLong(rs, "officeId");
         final String officeName = rs.getString("officeName");
@@ -115,6 +120,6 @@ public final class AllGroupTypesDataMapper implements RowMapper<GroupGeneralData
                 closedByUsername, closedByFirstname, closedByLastname);
 
         return GroupGeneralData.instance(id, accountNo, name, externalId, status, activationDate, officeId, officeName, centerId, centerName, staffId,
-                staffName, hierarchy, groupLevel, timeline);
+                staffName, hierarchy, groupLevel, timeline, groupType);
     }
 }
