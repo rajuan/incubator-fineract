@@ -41,11 +41,11 @@ import javax.persistence.UniqueConstraint;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.serialization.JsonParserHelper;
 import org.apache.fineract.infrastructure.core.service.DateUtils;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRateDTO;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRatePeriodData;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.joda.time.LocalDate;
-import org.springframework.data.jpa.domain.AbstractPersistable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -53,7 +53,7 @@ import com.google.gson.JsonObject;
 
 @Entity
 @Table(name = "m_floating_rates", uniqueConstraints = { @UniqueConstraint(columnNames = { "name" }, name = "unq_name") })
-public class FloatingRate extends AbstractPersistable<Long> {
+public class FloatingRate extends AbstractPersistableCustom<Long> {
 
 	@Column(name = "name", length = 200, unique = true, nullable = false)
 	private String name;
@@ -68,11 +68,11 @@ public class FloatingRate extends AbstractPersistable<Long> {
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "floatingRate", orphanRemoval = true, fetch=FetchType.EAGER)
 	private Set<FloatingRatePeriod> floatingRatePeriods;
 
-	@ManyToOne(optional = true)
+	@ManyToOne(optional = true, fetch=FetchType.LAZY)
 	@JoinColumn(name = "createdby_id", nullable = false)
 	private AppUser createdBy;
 
-	@ManyToOne(optional = true)
+	@ManyToOne(optional = true, fetch=FetchType.LAZY)
 	@JoinColumn(name = "lastmodifiedby_id", nullable = false)
 	private AppUser modifiedBy;
 

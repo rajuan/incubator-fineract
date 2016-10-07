@@ -21,6 +21,8 @@ package org.apache.fineract.infrastructure.entityaccess.service;
 import java.util.Date;
 import java.util.Map;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.fineract.infrastructure.codes.domain.CodeValue;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -107,7 +109,10 @@ public class FineractEntityAccessWriteServiceImpl implements FineractEntityAcces
 
             return new CommandProcessingResultBuilder().withEntityId(newMap.getId()).withCommandId(command.commandId()).build();
         } catch (final DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+            handleDataIntegrityIssues(command, dve.getCause(), dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -136,7 +141,10 @@ public class FineractEntityAccessWriteServiceImpl implements FineractEntityAcces
             return new CommandProcessingResultBuilder(). //
                     withEntityId(mapForUpdate.getId()).withCommandId(command.commandId()).build();
         } catch (DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+            handleDataIntegrityIssues(command, dve.getCause(), dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -154,9 +162,8 @@ public class FineractEntityAccessWriteServiceImpl implements FineractEntityAcces
 
     }
 
-    private void handleDataIntegrityIssues(final JsonCommand command, final DataIntegrityViolationException dve) {
+    private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
 
-        final Throwable realCause = dve.getMostSpecificCause();
         realCause.printStackTrace();
         if (realCause.getMessage().contains("rel_id_from_id_to_id")) {
             final String fromId = command.stringValueOfParameterNamed(FineractEntityApiResourceConstants.fromEnityType);
@@ -169,7 +176,7 @@ public class FineractEntityAccessWriteServiceImpl implements FineractEntityAcces
         throw new PlatformDataIntegrityException("error.msg.entity.mapping", "Unknown data integrity issue with resource.");
     }
 
-    private void logAsErrorUnexpectedDataIntegrityException(final DataIntegrityViolationException dve) {
+    private void logAsErrorUnexpectedDataIntegrityException(final Exception dve) {
         logger.error(dve.getMessage(), dve);
     }
 

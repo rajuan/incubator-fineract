@@ -28,6 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import javax.persistence.PersistenceException;
 import javax.sql.DataSource;
 
 import org.apache.commons.lang.BooleanUtils;
@@ -264,7 +265,18 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             // show duplicate datatable error msg
             if (realCause.getMessage()
                     .contains("Duplicate entry") || cause.getMessage()
-                    .contains("Duplicate entry")) { throw new PlatformDataIntegrityException("error.msg.datatable.registered",
+                    .contains("Duplicate entry")) { 
+            	throw new PlatformDataIntegrityException("error.msg.datatable.registered",
+                            "Datatable `" + dataTableName + "` is already registered against an application table.", "dataTableName",
+                            dataTableName); }
+            logAsErrorUnexpectedDataIntegrityException(dve);
+            throw new PlatformDataIntegrityException("error.msg.unknown.data.integrity.issue",
+                    "Unknown data integrity issue with resource.");
+        }catch (final PersistenceException dve) {
+        	final Throwable cause = dve.getCause() ;
+        	if (cause.getMessage()
+                    .contains("Duplicate entry")) { 
+        		throw new PlatformDataIntegrityException("error.msg.datatable.registered",
                             "Datatable `" + dataTableName + "` is already registered against an application table.", "dataTableName",
                             dataTableName); }
             logAsErrorUnexpectedDataIntegrityException(dve);
@@ -374,6 +386,19 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             logAsErrorUnexpectedDataIntegrityException(dve);
             throw new PlatformDataIntegrityException("error.msg.unknown.data.integrity.issue",
                     "Unknown data integrity issue with resource.");
+        }catch(final PersistenceException e) {
+        	final Throwable cause = e.getCause() ;
+            if (cause.getMessage()
+                    .contains("Duplicate entry")) { 
+            	throw new PlatformDataIntegrityException(
+                            "error.msg.datatable.entry.duplicate", "An entry already exists for datatable `" + dataTableName
+                                    + "` and application table with identifier `" + appTableId + "`.",
+                            "dataTableName", dataTableName, appTableId); }
+
+            logAsErrorUnexpectedDataIntegrityException(e);
+            throw new PlatformDataIntegrityException("error.msg.unknown.data.integrity.issue",
+                    "Unknown data integrity issue with resource.");
+        	
         }
     }
 
@@ -400,6 +425,17 @@ public class ReadWriteNonCoreDataServiceImpl implements ReadWriteNonCoreDataServ
             final Throwable realCause = dve.getMostSpecificCause();
             if (realCause.getMessage()
                     .contains("Duplicate entry") || cause.getMessage()
+                    .contains("Duplicate entry")) { throw new PlatformDataIntegrityException(
+                            "error.msg.datatable.entry.duplicate", "An entry already exists for datatable `" + dataTableName
+                                    + "` and application table with identifier `" + appTableId + "`.",
+                            "dataTableName", dataTableName, appTableId); }
+
+            logAsErrorUnexpectedDataIntegrityException(dve);
+            throw new PlatformDataIntegrityException("error.msg.unknown.data.integrity.issue",
+                    "Unknown data integrity issue with resource.");
+        }catch (final PersistenceException dve) {
+            final Throwable cause = dve.getCause() ;
+            if (cause.getMessage()
                     .contains("Duplicate entry")) { throw new PlatformDataIntegrityException(
                             "error.msg.datatable.entry.duplicate", "An entry already exists for datatable `" + dataTableName
                                     + "` and application table with identifier `" + appTableId + "`.",

@@ -22,7 +22,7 @@ package org.apache.fineract.organisation.teller.domain;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.joda.time.LocalDate;
-import org.springframework.data.jpa.domain.AbstractPersistable;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
 import javax.persistence.*;
 
@@ -33,7 +33,7 @@ import java.util.Map;
 
 @Entity
 @Table(name = "m_cashier_transactions")
-public class CashierTransaction extends AbstractPersistable<Long> {
+public class CashierTransaction extends AbstractPersistableCustom<Long> {
 
 	@Transient
     private Office office;

@@ -21,6 +21,8 @@ package org.apache.fineract.accounting.financialactivityaccount.service;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.fineract.accounting.common.AccountingConstants.FINANCIAL_ACTIVITY;
 import org.apache.fineract.accounting.financialactivityaccount.api.FinancialActivityAccountsJsonInputParams;
 import org.apache.fineract.accounting.financialactivityaccount.domain.FinancialActivityAccount;
@@ -76,7 +78,10 @@ public class FinancialActivityAccountWritePlatformServiceImpl implements Financi
                     .withEntityId(financialActivityAccount.getId()) //
                     .build();
         } catch (DataIntegrityViolationException dataIntegrityViolationException) {
-            handleFinancialActivityAccountDataIntegrityIssues(command, dataIntegrityViolationException);
+            handleFinancialActivityAccountDataIntegrityIssues(command, dataIntegrityViolationException.getMostSpecificCause(), dataIntegrityViolationException);
+            return CommandProcessingResult.empty();
+        }catch(final PersistenceException ee) {
+        	handleFinancialActivityAccountDataIntegrityIssues(command, ee.getCause(), ee);
             return CommandProcessingResult.empty();
         }
     }
@@ -122,7 +127,10 @@ public class FinancialActivityAccountWritePlatformServiceImpl implements Financi
                     .with(changes) //
                     .build();
         } catch (DataIntegrityViolationException dataIntegrityViolationException) {
-            handleFinancialActivityAccountDataIntegrityIssues(command, dataIntegrityViolationException);
+            handleFinancialActivityAccountDataIntegrityIssues(command, dataIntegrityViolationException.getMostSpecificCause(), dataIntegrityViolationException);
+            return CommandProcessingResult.empty();
+        }catch(final PersistenceException ee) {
+        	handleFinancialActivityAccountDataIntegrityIssues(command, ee.getCause(), ee);
             return CommandProcessingResult.empty();
         }
     }
@@ -138,8 +146,7 @@ public class FinancialActivityAccountWritePlatformServiceImpl implements Financi
                 .build();
     }
 
-    private void handleFinancialActivityAccountDataIntegrityIssues(final JsonCommand command, final DataIntegrityViolationException dve) {
-        final Throwable realCause = dve.getMostSpecificCause();
+    private void handleFinancialActivityAccountDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
         if (realCause.getMessage().contains("financial_activity_type")) {
             final Integer financialActivityId = command
                     .integerValueSansLocaleOfParameterNamed(FinancialActivityAccountsJsonInputParams.FINANCIAL_ACTIVITY_ID.getValue());

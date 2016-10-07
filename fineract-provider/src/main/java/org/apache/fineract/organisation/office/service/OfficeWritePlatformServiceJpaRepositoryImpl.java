@@ -20,6 +20,8 @@ package org.apache.fineract.organisation.office.service;
 
 import java.util.Map;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -105,7 +107,10 @@ public class OfficeWritePlatformServiceJpaRepositoryImpl implements OfficeWriteP
                     .withOfficeId(office.getId()) //
                     .build();
         } catch (final DataIntegrityViolationException dve) {
-            handleOfficeDataIntegrityIssues(command, dve);
+            handleOfficeDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+            handleOfficeDataIntegrityIssues(command, dve.getCause(), dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -148,7 +153,10 @@ public class OfficeWritePlatformServiceJpaRepositoryImpl implements OfficeWriteP
                     .with(changes) //
                     .build();
         } catch (final DataIntegrityViolationException dve) {
-            handleOfficeDataIntegrityIssues(command, dve);
+            handleOfficeDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+            handleOfficeDataIntegrityIssues(command, dve.getCause(), dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -211,9 +219,8 @@ public class OfficeWritePlatformServiceJpaRepositoryImpl implements OfficeWriteP
      * Guaranteed to throw an exception no matter what the data integrity issue
      * is.
      */
-    private void handleOfficeDataIntegrityIssues(final JsonCommand command, final DataIntegrityViolationException dve) {
+    private void handleOfficeDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
 
-        final Throwable realCause = dve.getMostSpecificCause();
         if (realCause.getMessage().contains("externalid_org")) {
             final String externalId = command.stringValueOfParameterNamed("externalId");
             throw new PlatformDataIntegrityException("error.msg.office.duplicate.externalId", "Office with externalId `" + externalId

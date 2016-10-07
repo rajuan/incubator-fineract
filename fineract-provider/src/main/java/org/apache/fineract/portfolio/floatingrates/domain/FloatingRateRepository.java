@@ -28,10 +28,10 @@ public interface FloatingRateRepository extends
 		JpaRepository<FloatingRate, Long>,
 		JpaSpecificationExecutor<FloatingRate> {
 
-	@Query("from FloatingRate floatingRate where floatingRate.isBaseLendingRate = 1 and floatingRate.isActive = 1")
+	@Query("select floatingRate from FloatingRate floatingRate where floatingRate.isBaseLendingRate = 1 and floatingRate.isActive = 1")
 	FloatingRate retrieveBaseLendingRate();
 	
-	@Query("from FloatingRate floatingRate " +
+	@Query("select floatingRate from FloatingRate floatingRate " +
 			" inner join floatingRate.floatingRatePeriods as periods" +
 			" where floatingRate.isActive = 1 " +
 			" and periods.isActive = 1 " +

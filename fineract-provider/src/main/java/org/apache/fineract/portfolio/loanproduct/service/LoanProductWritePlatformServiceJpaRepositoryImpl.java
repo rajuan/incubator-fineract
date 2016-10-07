@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -143,7 +145,10 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                     .build();
 
         } catch (final DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch(final PersistenceException ee) {
+        	handleDataIntegrityIssues(command, ee.getCause(), ee);
             return CommandProcessingResult.empty();
         }
 
@@ -230,8 +235,11 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
                     .build();
 
         } catch (final DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return new CommandProcessingResult(Long.valueOf(-1));
+        }catch(final PersistenceException ee) {
+        	handleDataIntegrityIssues(command, ee.getCause(), ee);
+            return CommandProcessingResult.empty();
         }
 
     }
@@ -281,9 +289,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
      * Guaranteed to throw an exception no matter what the data integrity issue
      * is.
      */
-    private void handleDataIntegrityIssues(final JsonCommand command, final DataIntegrityViolationException dve) {
-
-        final Throwable realCause = dve.getMostSpecificCause();
+    private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
 
         if (realCause.getMessage().contains("external_id")) {
 
@@ -320,7 +326,7 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
         }
     }
 
-    private void logAsErrorUnexpectedDataIntegrityException(final DataIntegrityViolationException dve) {
+    private void logAsErrorUnexpectedDataIntegrityException(final Exception dve) {
         logger.error(dve.getMessage(), dve);
     }
 }

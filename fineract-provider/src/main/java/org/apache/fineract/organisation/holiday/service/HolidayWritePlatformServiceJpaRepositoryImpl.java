@@ -24,6 +24,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -94,7 +96,10 @@ public class HolidayWritePlatformServiceJpaRepositoryImpl implements HolidayWrit
 
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(holiday.getId()).build();
         } catch (final DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+            handleDataIntegrityIssues(command, dve.getCause(), dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -124,7 +129,10 @@ public class HolidayWritePlatformServiceJpaRepositoryImpl implements HolidayWrit
 
             return new CommandProcessingResultBuilder().withEntityId(holiday.getId()).with(changes).build();
         } catch (final DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+            handleDataIntegrityIssues(command, dve.getCause(), dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -168,8 +176,7 @@ public class HolidayWritePlatformServiceJpaRepositoryImpl implements HolidayWrit
         return offices;
     }
 
-    private void handleDataIntegrityIssues(final JsonCommand command, final DataIntegrityViolationException dve) {
-        final Throwable realCause = dve.getMostSpecificCause();
+    private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
         if (realCause.getMessage().contains("holiday_name")) {
             final String name = command.stringValueOfParameterNamed("name");
             throw new PlatformDataIntegrityException("error.msg.holiday.duplicate.name", "Holiday with name `" + name + "` already exists",

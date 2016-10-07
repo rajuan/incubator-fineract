@@ -21,11 +21,13 @@ package org.apache.fineract.infrastructure.accountnumberformat.service;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.fineract.infrastructure.accountnumberformat.data.AccountNumberFormatDataValidator;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
+import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatEnumerations.AccountNumberPrefixType;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
-import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatEnumerations.AccountNumberPrefixType;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -74,7 +76,10 @@ public class AccountNumberFormatWritePlatformServiceJpaRepositoryImpl implements
                     .withEntityId(accountNumberFormat.getId()) //
                     .build();
         } catch (final DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException ee) {
+        	handleDataIntegrityIssues(command, ee.getCause(), ee);
             return CommandProcessingResult.empty();
         }
     }
@@ -110,7 +115,10 @@ public class AccountNumberFormatWritePlatformServiceJpaRepositoryImpl implements
                     .with(actualChanges) //
                     .build();
         } catch (final DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        } catch (final PersistenceException ee) {
+        	handleDataIntegrityIssues(command, ee.getCause(), ee);
             return CommandProcessingResult.empty();
         }
     }
@@ -126,13 +134,12 @@ public class AccountNumberFormatWritePlatformServiceJpaRepositoryImpl implements
                 .build();
     }
 
+        
     /*
      * Guaranteed to throw an exception no matter what the data integrity issue
      * is.
      */
-    private void handleDataIntegrityIssues(final JsonCommand command, final DataIntegrityViolationException dve) {
-
-        final Throwable realCause = dve.getMostSpecificCause();
+    private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
         if (realCause.getMessage().contains(AccountNumberFormatConstants.ACCOUNT_TYPE_UNIQUE_CONSTRAINT_NAME)) {
 
             final Integer accountTypeId = command.integerValueSansLocaleOfParameterNamed(AccountNumberFormatConstants.accountTypeParamName);

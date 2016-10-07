@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandProcessingService;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
@@ -225,7 +227,10 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                     .build();
 
         } catch (final DataIntegrityViolationException dve) {
-            handleGroupDataIntegrityIssues(command, dve, groupingType);
+            handleGroupDataIntegrityIssues(command, dve.getMostSpecificCause(), dve, groupingType);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException ee) {
+        	handleGroupDataIntegrityIssues(command, ee.getCause(), ee, groupingType);
             return CommandProcessingResult.empty();
         }
     }
@@ -300,7 +305,10 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                     .withEntityId(groupId) //
                     .build();
         } catch (final DataIntegrityViolationException dve) {
-            handleGroupDataIntegrityIssues(command, dve, GroupTypes.GROUP);
+            handleGroupDataIntegrityIssues(command, dve.getMostSpecificCause(), dve, GroupTypes.GROUP);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException ee) {
+        	handleGroupDataIntegrityIssues(command, ee.getCause(), ee, GroupTypes.GROUP);
             return CommandProcessingResult.empty();
         }
     }
@@ -434,7 +442,10 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
                     .build();
 
         } catch (final DataIntegrityViolationException dve) {
-            handleGroupDataIntegrityIssues(command, dve, groupingType);
+            handleGroupDataIntegrityIssues(command, dve.getMostSpecificCause(), dve, groupingType);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException ee) {
+        	handleGroupDataIntegrityIssues(command, ee.getCause(), ee, groupingType);
             return CommandProcessingResult.empty();
         }
     }
@@ -697,7 +708,7 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
      * Guaranteed to throw an exception no matter what the data integrity issue
      * is.
      */
-    private void handleGroupDataIntegrityIssues(final JsonCommand command, final DataIntegrityViolationException dve,
+    private void handleGroupDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve,
             final GroupTypes groupLevel) {
 
         String levelName = "Invalid";
@@ -712,7 +723,6 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
             break;
         }
 
-        final Throwable realCause = dve.getMostSpecificCause();
         String errorMessageForUser = null;
         String errorMessageForMachine = null;
 

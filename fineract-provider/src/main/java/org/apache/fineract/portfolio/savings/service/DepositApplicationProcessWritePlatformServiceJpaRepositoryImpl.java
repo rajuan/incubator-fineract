@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
@@ -88,7 +90,6 @@ import org.apache.fineract.portfolio.savings.domain.SavingsProductRepository;
 import org.apache.fineract.portfolio.savings.exception.SavingsProductNotFoundException;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.joda.time.LocalDate;
-import org.joda.time.LocalTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -160,11 +161,10 @@ public class DepositApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
      * Guaranteed to throw an exception no matter what the data integrity issue
      * is.
      */
-    private void handleDataIntegrityIssues(final JsonCommand command, final DataAccessException dve) {
+    private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
 
         final StringBuilder errorCodeBuilder = new StringBuilder("error.msg.").append(SavingsApiConstants.SAVINGS_ACCOUNT_RESOURCE_NAME);
 
-        final Throwable realCause = dve.getMostSpecificCause();
         if (realCause.getMessage().contains("sa_account_no_UNIQUE")) {
             final String accountNo = command.stringValueOfParameterNamed("accountNo");
             errorCodeBuilder.append(".duplicate.accountNo");
@@ -235,7 +235,10 @@ public class DepositApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
                     .withSavingsId(savingsId) //
                     .build();
         } catch (final DataAccessException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException ee) {
+        	handleDataIntegrityIssues(command, ee.getCause(), ee);
             return CommandProcessingResult.empty();
         }
     }
@@ -289,7 +292,10 @@ public class DepositApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
                     .withSavingsId(savingsId) //
                     .build();
         } catch (final DataAccessException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException ee) {
+        	handleDataIntegrityIssues(command, ee.getCause(), ee);
             return CommandProcessingResult.empty();
         }
     }
@@ -435,8 +441,11 @@ public class DepositApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
                     .with(changes) //
                     .build();
         } catch (final DataAccessException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return new CommandProcessingResult(Long.valueOf(-1));
+        }catch (final PersistenceException ee) {
+        	handleDataIntegrityIssues(command, ee.getCause(), ee);
+        	return new CommandProcessingResult(Long.valueOf(-1));
         }
     }
 
@@ -502,8 +511,11 @@ public class DepositApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
                     .with(changes) //
                     .build();
         } catch (final DataAccessException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return new CommandProcessingResult(Long.valueOf(-1));
+        }catch (final PersistenceException ee) {
+        	handleDataIntegrityIssues(command, ee.getCause(), ee);
+        	return new CommandProcessingResult(Long.valueOf(-1));
         }
     }
 

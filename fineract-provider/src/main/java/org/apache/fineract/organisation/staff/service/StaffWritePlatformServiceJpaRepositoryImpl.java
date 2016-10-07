@@ -20,6 +20,8 @@ package org.apache.fineract.organisation.staff.service;
 
 import java.util.Map;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -74,7 +76,10 @@ public class StaffWritePlatformServiceJpaRepositoryImpl implements StaffWritePla
                     .withEntityId(staff.getId()).withOfficeId(officeId) //
                     .build();
         } catch (final DataIntegrityViolationException dve) {
-            handleStaffDataIntegrityIssues(command, dve);
+            handleStaffDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+            handleStaffDataIntegrityIssues(command, dve.getCause(), dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -104,7 +109,10 @@ public class StaffWritePlatformServiceJpaRepositoryImpl implements StaffWritePla
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(staffId)
                     .withOfficeId(staffForUpdate.officeId()).with(changesOnly).build();
         } catch (final DataIntegrityViolationException dve) {
-            handleStaffDataIntegrityIssues(command, dve);
+            handleStaffDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+            handleStaffDataIntegrityIssues(command, dve.getCause(), dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -113,8 +121,7 @@ public class StaffWritePlatformServiceJpaRepositoryImpl implements StaffWritePla
      * Guaranteed to throw an exception no matter what the data integrity issue
      * is.
      */
-    private void handleStaffDataIntegrityIssues(final JsonCommand command, final DataIntegrityViolationException dve) {
-        final Throwable realCause = dve.getMostSpecificCause();
+    private void handleStaffDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
 
         if (realCause.getMessage().contains("external_id")) {
 

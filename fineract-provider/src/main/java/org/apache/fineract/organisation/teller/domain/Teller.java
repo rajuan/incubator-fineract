@@ -39,13 +39,13 @@ import org.apache.fineract.accounting.glaccount.domain.GLAccount;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.joda.time.LocalDate;
-import org.springframework.data.jpa.domain.AbstractPersistable;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
 @Entity
 @Table(name = "m_tellers", uniqueConstraints = {
         @UniqueConstraint(name = "ux_tellers_name", columnNames = {"name"})
 })
-public class Teller extends AbstractPersistable<Long> {
+public class Teller extends AbstractPersistableCustom<Long> {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "office_id", nullable = false)
@@ -293,5 +293,12 @@ public class Teller extends AbstractPersistable<Long> {
 
     public void setTransactions(Set<TellerTransaction> tellerTransactions) {
         this.tellerTransactions = tellerTransactions;
+    }
+    
+    public void initializeLazyCollections() {
+    	    this.debitAccount.getId();
+    	    this.creditAccount.getId();
+    	    this.cashiers.size();
+    	    tellerTransactions.size();
     }
 }

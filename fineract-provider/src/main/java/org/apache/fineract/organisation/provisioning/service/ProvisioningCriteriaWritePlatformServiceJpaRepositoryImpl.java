@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.fineract.accounting.glaccount.domain.GLAccount;
 import org.apache.fineract.accounting.glaccount.domain.GLAccountRepository;
 import org.apache.fineract.accounting.provisioning.service.ProvisioningEntriesReadPlatformService;
@@ -84,7 +86,10 @@ public class ProvisioningCriteriaWritePlatformServiceJpaRepositoryImpl implement
             this.provisioningCriteriaRepository.save(provisioningCriteria);
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(provisioningCriteria.getId()).build();
         } catch (final DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+            handleDataIntegrityIssues(command, dve.getCause(), dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -114,11 +119,14 @@ public class ProvisioningCriteriaWritePlatformServiceJpaRepositoryImpl implement
             final Map<String, Object> changes = provisioningCriteria.update(command, products) ;
             if(!changes.isEmpty()) {
                 updateProvisioningCriteriaDefinitions(provisioningCriteria, command) ;
-                provisioningCriteriaRepository.save(provisioningCriteria) ;    
+                provisioningCriteriaRepository.saveAndFlush(provisioningCriteria) ;    
             }
             return new CommandProcessingResultBuilder().withCommandId(command.commandId()).withEntityId(provisioningCriteria.getId()).build();	
     	} catch (final DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
+            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+            handleDataIntegrityIssues(command, dve.getCause(), dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -153,9 +161,7 @@ public class ProvisioningCriteriaWritePlatformServiceJpaRepositoryImpl implement
      * Guaranteed to throw an exception no matter what the data integrity issue
      * is.
      */
-    private void handleDataIntegrityIssues(final JsonCommand command, final DataIntegrityViolationException dve) {
-
-        final Throwable realCause = dve.getMostSpecificCause();
+    private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
         if (realCause.getMessage().contains("criteria_name")) {
             final String name = command.stringValueOfParameterNamed("criteria_name");
             throw new PlatformDataIntegrityException("error.msg.provisioning.duplicate.criterianame", "Provisioning Criteria with name `"

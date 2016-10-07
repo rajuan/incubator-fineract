@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -152,9 +154,14 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                     .withOfficeId(userOffice.getId()) //
                     .build();
         } catch (final DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve);
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
-        } catch (final PlatformEmailSendException e) {
+        }catch (final PersistenceException dve) {
+            handleDataIntegrityIssues(command, dve.getCause(), dve);
+            return new CommandProcessingResultBuilder() //
+                    .withCommandId(command.commandId()) //
+                    .build();
+        }catch (final PlatformEmailSendException e) {
             final List<ApiParameterError> dataValidationErrors = new ArrayList<>();
 
             final String email = command.stringValueOfParameterNamed("email");
@@ -239,9 +246,13 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
                     .with(changes) //
                     .build();
         } catch (final DataIntegrityViolationException dve) {
-            handleDataIntegrityIssues(command, dve);
-
+            handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+            handleDataIntegrityIssues(command, dve.getCause(), dve);
+            return new CommandProcessingResultBuilder() //
+                    .withCommandId(command.commandId()) //
+                    .build();
         }
     }
 
@@ -317,9 +328,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
      * Guaranteed to throw an exception no matter what the data integrity issue
      * is.
      */
-    private void handleDataIntegrityIssues(final JsonCommand command, final DataIntegrityViolationException dve) {
+    private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
 
-        final Throwable realCause = dve.getMostSpecificCause();
         if (realCause.getMessage().contains("username_org")) {
             final String username = command.stringValueOfParameterNamed("username");
             final StringBuilder defaultMessageBuilder = new StringBuilder("User with username ").append(username)

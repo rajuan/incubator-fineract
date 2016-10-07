@@ -20,34 +20,33 @@ package org.apache.fineract.accounting.producttoaccountmapping.domain;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 import org.apache.fineract.accounting.glaccount.domain.GLAccount;
+import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 import org.apache.fineract.portfolio.charge.domain.Charge;
 import org.apache.fineract.portfolio.paymenttype.domain.PaymentType;
-import org.springframework.data.jpa.domain.AbstractPersistable;
 
 @Entity
 @Table(name = "acc_product_mapping", uniqueConstraints = { @UniqueConstraint(columnNames = { "product_id", "product_type",
         "financial_account_type", "payment_type" }, name = "financial_action") })
-public class ProductToGLAccountMapping extends AbstractPersistable<Long> {
+public class ProductToGLAccountMapping extends AbstractPersistableCustom<Long> {
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "gl_account_id")
     private GLAccount glAccount;
 
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "payment_type", nullable = true)
     private PaymentType paymentType;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "charge_id", nullable = true)
     private Charge charge;
 
