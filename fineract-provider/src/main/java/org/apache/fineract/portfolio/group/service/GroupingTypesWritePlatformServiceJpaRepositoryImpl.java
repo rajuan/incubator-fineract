@@ -28,6 +28,7 @@ import java.util.Set;
 
 import javax.persistence.PersistenceException;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.commands.service.CommandProcessingService;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
@@ -229,9 +230,10 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
         } catch (final DataIntegrityViolationException dve) {
             handleGroupDataIntegrityIssues(command, dve.getMostSpecificCause(), dve, groupingType);
             return CommandProcessingResult.empty();
-        }catch (final PersistenceException ee) {
-        	handleGroupDataIntegrityIssues(command, ee.getCause(), ee, groupingType);
-            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+            handleGroupDataIntegrityIssues(command, throwable, dve, groupingType);
+         	return CommandProcessingResult.empty();
         }
     }
 
@@ -307,9 +309,10 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
         } catch (final DataIntegrityViolationException dve) {
             handleGroupDataIntegrityIssues(command, dve.getMostSpecificCause(), dve, GroupTypes.GROUP);
             return CommandProcessingResult.empty();
-        }catch (final PersistenceException ee) {
-        	handleGroupDataIntegrityIssues(command, ee.getCause(), ee, GroupTypes.GROUP);
-            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+            Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+            handleGroupDataIntegrityIssues(command, throwable, dve, GroupTypes.GROUP);
+         	return CommandProcessingResult.empty();
         }
     }
 
@@ -444,9 +447,10 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
         } catch (final DataIntegrityViolationException dve) {
             handleGroupDataIntegrityIssues(command, dve.getMostSpecificCause(), dve, groupingType);
             return CommandProcessingResult.empty();
-        }catch (final PersistenceException ee) {
-        	handleGroupDataIntegrityIssues(command, ee.getCause(), ee, groupingType);
-            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+            handleGroupDataIntegrityIssues(command, throwable, dve, groupingType);
+         	return CommandProcessingResult.empty();
         }
     }
 
@@ -726,14 +730,14 @@ public class GroupingTypesWritePlatformServiceJpaRepositoryImpl implements Group
         String errorMessageForUser = null;
         String errorMessageForMachine = null;
 
-        if (realCause.getMessage().contains("external_id")) {
+        if (realCause.getMessage().contains("'external_id'")) {
 
             final String externalId = command.stringValueOfParameterNamed(GroupingTypesApiConstants.externalIdParamName);
             errorMessageForUser = levelName + " with externalId `" + externalId + "` already exists.";
             errorMessageForMachine = "error.msg." + levelName.toLowerCase() + ".duplicate.externalId";
             throw new PlatformDataIntegrityException(errorMessageForMachine, errorMessageForUser,
                     GroupingTypesApiConstants.externalIdParamName, externalId);
-        } else if (realCause.getMessage().contains("name")) {
+        } else if (realCause.getMessage().contains("'name'")) {
 
             final String name = command.stringValueOfParameterNamed(GroupingTypesApiConstants.nameParamName);
             errorMessageForUser = levelName + " with name `" + name + "` already exists.";

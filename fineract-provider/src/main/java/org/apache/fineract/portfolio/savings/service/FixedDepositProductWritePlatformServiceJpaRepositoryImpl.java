@@ -30,6 +30,7 @@ import java.util.Set;
 
 import javax.persistence.PersistenceException;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -102,9 +103,10 @@ public class FixedDepositProductWritePlatformServiceJpaRepositoryImpl implements
         } catch (final DataAccessException e) {
             handleDataIntegrityIssues(command, e.getMostSpecificCause(), e);
             return CommandProcessingResult.empty();
-        }catch (final PersistenceException e) {
-            handleDataIntegrityIssues(command, e.getCause(), e);
-            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 
@@ -161,9 +163,10 @@ public class FixedDepositProductWritePlatformServiceJpaRepositoryImpl implements
         } catch (final DataAccessException e) {
             handleDataIntegrityIssues(command, e.getMostSpecificCause(), e);
             return CommandProcessingResult.empty();
-        }catch (final PersistenceException e) {
-            handleDataIntegrityIssues(command, e.getCause(), e);
-            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 

@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.persistence.PersistenceException;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -74,9 +75,10 @@ public class FundWritePlatformServiceJpaRepositoryImpl implements FundWritePlatf
         } catch (final DataIntegrityViolationException dve) {
             handleFundDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
-        }catch (final PersistenceException ee) {
-        	handleFundDataIntegrityIssues(command, ee.getCause(), ee);
-            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleFundDataIntegrityIssues(command, throwable, dve);
+         	return CommandProcessingResult.empty();
         }
     }
 
@@ -102,9 +104,10 @@ public class FundWritePlatformServiceJpaRepositoryImpl implements FundWritePlatf
         } catch (final DataIntegrityViolationException dve) {
             handleFundDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
-        }catch (final PersistenceException ee) {
-        	handleFundDataIntegrityIssues(command, ee.getCause(), ee);
-            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleFundDataIntegrityIssues(command, throwable, dve);
+         	return CommandProcessingResult.empty();
         }
     }
 

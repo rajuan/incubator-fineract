@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.persistence.PersistenceException;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -105,8 +106,9 @@ public class ReportWritePlatformServiceImpl implements ReportWritePlatformServic
             handleReportDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleReportDataIntegrityIssues(command, dve.getCause(), dve);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleReportDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 
@@ -145,8 +147,9 @@ public class ReportWritePlatformServiceImpl implements ReportWritePlatformServic
             handleReportDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleReportDataIntegrityIssues(command, dve.getCause(), dve);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleReportDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 

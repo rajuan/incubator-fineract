@@ -37,6 +37,7 @@ import java.util.Set;
 
 import javax.persistence.PersistenceException;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -141,8 +142,9 @@ public class HookWritePlatformServiceJpaRepositoryImpl
             handleHookDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleHookDataIntegrityIssues(command, dve.getCause(), dve);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleHookDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 
@@ -208,8 +210,9 @@ public class HookWritePlatformServiceJpaRepositoryImpl
             handleHookDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleHookDataIntegrityIssues(command, dve.getCause(), dve);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleHookDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 

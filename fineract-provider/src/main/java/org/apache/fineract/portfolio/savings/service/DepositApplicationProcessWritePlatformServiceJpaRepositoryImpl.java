@@ -33,6 +33,7 @@ import java.util.Set;
 import javax.persistence.PersistenceException;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.EntityAccountType;
@@ -165,7 +166,7 @@ public class DepositApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
 
         final StringBuilder errorCodeBuilder = new StringBuilder("error.msg.").append(SavingsApiConstants.SAVINGS_ACCOUNT_RESOURCE_NAME);
 
-        if (realCause.getMessage().contains("sa_account_no_UNIQUE")) {
+        if (realCause.getMessage().contains("'sa_account_no_UNIQUE'")) {
             final String accountNo = command.stringValueOfParameterNamed("accountNo");
             errorCodeBuilder.append(".duplicate.accountNo");
             throw new PlatformDataIntegrityException(errorCodeBuilder.toString(), "Savings account with accountNo " + accountNo
@@ -237,8 +238,9 @@ public class DepositApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         } catch (final DataAccessException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
-        }catch (final PersistenceException ee) {
-        	handleDataIntegrityIssues(command, ee.getCause(), ee);
+        }catch (final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -294,8 +296,9 @@ public class DepositApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         } catch (final DataAccessException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
-        }catch (final PersistenceException ee) {
-        	handleDataIntegrityIssues(command, ee.getCause(), ee);
+        }catch (final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(command, throwable, dve);
             return CommandProcessingResult.empty();
         }
     }
@@ -443,8 +446,9 @@ public class DepositApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         } catch (final DataAccessException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return new CommandProcessingResult(Long.valueOf(-1));
-        }catch (final PersistenceException ee) {
-        	handleDataIntegrityIssues(command, ee.getCause(), ee);
+        }catch (final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(command, throwable, dve);
         	return new CommandProcessingResult(Long.valueOf(-1));
         }
     }
@@ -513,8 +517,9 @@ public class DepositApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
         } catch (final DataAccessException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return new CommandProcessingResult(Long.valueOf(-1));
-        }catch (final PersistenceException ee) {
-        	handleDataIntegrityIssues(command, ee.getCause(), ee);
+        }catch (final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(command, throwable, dve);
         	return new CommandProcessingResult(Long.valueOf(-1));
         }
     }

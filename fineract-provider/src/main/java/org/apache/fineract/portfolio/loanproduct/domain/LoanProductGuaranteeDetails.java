@@ -48,10 +48,10 @@ public class LoanProductGuaranteeDetails extends AbstractPersistableCustom<Long>
     @Column(name = "mandatory_guarantee", scale = 6, precision = 19, nullable = false)
     private BigDecimal mandatoryGuarantee;
 
-    @Column(name = "minimum_guarantee_from_own_funds", scale = 6, precision = 19, nullable = false)
+    @Column(name = "minimum_guarantee_from_own_funds", scale = 6, precision = 19, nullable = true)
     private BigDecimal minimumGuaranteeFromOwnFunds;
 
-    @Column(name = "minimum_guarantee_from_guarantor_funds", scale = 6, precision = 19, nullable = false)
+    @Column(name = "minimum_guarantee_from_guarantor_funds", scale = 6, precision = 19, nullable = true)
     private BigDecimal minimumGuaranteeFromGuarantor;
 
     protected LoanProductGuaranteeDetails() {

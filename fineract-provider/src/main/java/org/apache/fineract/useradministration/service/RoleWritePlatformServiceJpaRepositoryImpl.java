@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.persistence.PersistenceException;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -87,7 +88,8 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
                     .withCommandId(command.commandId()) //
                     .build();
         }catch (final PersistenceException dve) {
-            handleDataIntegrityIssues(command, dve.getCause(), dve);
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(command, throwable, dve);
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .build();
@@ -144,7 +146,8 @@ public class RoleWritePlatformServiceJpaRepositoryImpl implements RoleWritePlatf
                     .withCommandId(command.commandId()) //
                     .build();
         }catch (final PersistenceException dve) {
-            handleDataIntegrityIssues(command, dve.getCause(), dve);
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(command, throwable, dve);
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .build();

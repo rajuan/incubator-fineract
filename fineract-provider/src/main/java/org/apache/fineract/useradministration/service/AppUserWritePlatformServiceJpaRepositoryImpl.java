@@ -27,6 +27,7 @@ import java.util.Set;
 
 import javax.persistence.PersistenceException;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.commands.service.CommandWrapperBuilder;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.ApiParameterError;
@@ -157,7 +158,8 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleDataIntegrityIssues(command, dve.getCause(), dve);
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+            handleDataIntegrityIssues(command, throwable, dve);
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .build();
@@ -171,6 +173,12 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
 
             throw new PlatformApiDataValidationException("validation.msg.validation.errors.exist", "Validation errors exist.",
                     dataValidationErrors);
+        }catch (final Exception dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(command, throwable, dve);
+            return new CommandProcessingResultBuilder() //
+                    .withCommandId(command.commandId()) //
+                    .build();
         }
     }
 
@@ -329,8 +337,7 @@ public class AppUserWritePlatformServiceJpaRepositoryImpl implements AppUserWrit
      * is.
      */
     private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
-
-        if (realCause.getMessage().contains("username_org")) {
+        if (realCause.getMessage().contains("'username_org'")) {
             final String username = command.stringValueOfParameterNamed("username");
             final StringBuilder defaultMessageBuilder = new StringBuilder("User with username ").append(username)
                     .append(" already exists.");

@@ -30,6 +30,7 @@ import java.util.Set;
 import javax.persistence.PersistenceException;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.accounting.journalentry.service.JournalEntryWritePlatformService;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
@@ -107,9 +108,10 @@ public class ShareAccountWritePlatformServiceJpaRepositoryImpl implements ShareA
         } catch (final DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(jsonCommand, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
-        }catch (final PersistenceException ee) {
-        	handleDataIntegrityIssues(jsonCommand, ee.getCause(), ee);
-            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(jsonCommand, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 
@@ -204,9 +206,10 @@ public class ShareAccountWritePlatformServiceJpaRepositoryImpl implements ShareA
         } catch (DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(jsonCommand, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
-        }catch (final PersistenceException ee) {
-        	handleDataIntegrityIssues(jsonCommand, ee.getCause(), ee);
-            return CommandProcessingResult.empty();
+        }catch (final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleDataIntegrityIssues(jsonCommand, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 

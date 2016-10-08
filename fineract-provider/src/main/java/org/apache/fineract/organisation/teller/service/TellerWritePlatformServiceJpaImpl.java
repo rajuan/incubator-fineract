@@ -23,6 +23,7 @@ import java.util.Set;
 
 import javax.persistence.PersistenceException;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.accounting.common.AccountingConstants.FINANCIAL_ACTIVITY;
 import org.apache.fineract.accounting.financialactivityaccount.domain.FinancialActivityAccount;
 import org.apache.fineract.accounting.financialactivityaccount.domain.FinancialActivityAccountRepositoryWrapper;
@@ -120,8 +121,9 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
             handleTellerDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleTellerDataIntegrityIssues(command, dve.getCause(), dve);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleTellerDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 
@@ -154,8 +156,9 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
             handleTellerDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleTellerDataIntegrityIssues(command, dve.getCause(), dve);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleTellerDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 
@@ -262,8 +265,9 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
             handleTellerDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleTellerDataIntegrityIssues(command, dve.getCause(), dve);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleTellerDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 
@@ -301,8 +305,9 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
             handleTellerDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleTellerDataIntegrityIssues(command, dve.getCause(), dve);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleTellerDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 
@@ -327,8 +332,9 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
             handleTellerDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleTellerDataIntegrityIssues(command, dve.getCause(), dve);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleTellerDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
 
         return new CommandProcessingResultBuilder() //
@@ -453,8 +459,9 @@ public class TellerWritePlatformServiceJpaImpl implements TellerWritePlatformSer
             handleTellerDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleTellerDataIntegrityIssues(command, dve.getCause(), dve);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleTellerDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 

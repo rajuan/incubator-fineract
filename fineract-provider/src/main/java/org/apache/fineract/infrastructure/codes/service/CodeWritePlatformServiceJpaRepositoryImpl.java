@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.persistence.PersistenceException;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.codes.domain.Code;
 import org.apache.fineract.infrastructure.codes.domain.CodeRepository;
 import org.apache.fineract.infrastructure.codes.exception.CodeNotFoundException;
@@ -75,8 +76,9 @@ public class CodeWritePlatformServiceJpaRepositoryImpl implements CodeWritePlatf
             handleCodeDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException ee) {
-        	handleCodeDataIntegrityIssues(command, ee.getCause(), ee);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(ee.getCause()) ;
+        	handleCodeDataIntegrityIssues(command, throwable, ee);
+        	return CommandProcessingResult.empty();
         }
     }
 
@@ -106,8 +108,9 @@ public class CodeWritePlatformServiceJpaRepositoryImpl implements CodeWritePlatf
             handleCodeDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException ee) {
-        	handleCodeDataIntegrityIssues(command, ee.getCause(), ee);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(ee.getCause()) ;
+        	handleCodeDataIntegrityIssues(command, throwable, ee);
+        	return CommandProcessingResult.empty();
         }
     }
 

@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.persistence.PersistenceException;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.accounting.common.AccountingConstants.FINANCIAL_ACTIVITY;
 import org.apache.fineract.accounting.financialactivityaccount.api.FinancialActivityAccountsJsonInputParams;
 import org.apache.fineract.accounting.financialactivityaccount.domain.FinancialActivityAccount;
@@ -81,7 +82,8 @@ public class FinancialActivityAccountWritePlatformServiceImpl implements Financi
             handleFinancialActivityAccountDataIntegrityIssues(command, dataIntegrityViolationException.getMostSpecificCause(), dataIntegrityViolationException);
             return CommandProcessingResult.empty();
         }catch(final PersistenceException ee) {
-        	handleFinancialActivityAccountDataIntegrityIssues(command, ee.getCause(), ee);
+        	Throwable throwable = ExceptionUtils.getRootCause(ee.getCause()) ;
+        	handleFinancialActivityAccountDataIntegrityIssues(command, throwable, ee);
             return CommandProcessingResult.empty();
         }
     }
@@ -130,8 +132,9 @@ public class FinancialActivityAccountWritePlatformServiceImpl implements Financi
             handleFinancialActivityAccountDataIntegrityIssues(command, dataIntegrityViolationException.getMostSpecificCause(), dataIntegrityViolationException);
             return CommandProcessingResult.empty();
         }catch(final PersistenceException ee) {
-        	handleFinancialActivityAccountDataIntegrityIssues(command, ee.getCause(), ee);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(ee.getCause()) ;
+        	handleFinancialActivityAccountDataIntegrityIssues(command, throwable, ee);
+        	return CommandProcessingResult.empty();
         }
     }
 

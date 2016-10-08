@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.persistence.PersistenceException;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.accountnumberformat.data.AccountNumberFormatDataValidator;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.apache.fineract.infrastructure.accountnumberformat.domain.AccountNumberFormatEnumerations.AccountNumberPrefixType;
@@ -79,8 +80,9 @@ public class AccountNumberFormatWritePlatformServiceJpaRepositoryImpl implements
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException ee) {
-        	handleDataIntegrityIssues(command, ee.getCause(), ee);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(ee.getCause()) ;
+        	handleDataIntegrityIssues(command, throwable, ee);
+        	return CommandProcessingResult.empty();
         }
     }
 
@@ -118,8 +120,9 @@ public class AccountNumberFormatWritePlatformServiceJpaRepositoryImpl implements
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         } catch (final PersistenceException ee) {
-        	handleDataIntegrityIssues(command, ee.getCause(), ee);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(ee.getCause()) ;
+        	handleDataIntegrityIssues(command, throwable, ee);
+        	return CommandProcessingResult.empty();
         }
     }
 

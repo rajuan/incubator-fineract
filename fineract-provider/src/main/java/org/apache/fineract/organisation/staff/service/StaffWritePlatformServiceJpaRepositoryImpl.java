@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.persistence.PersistenceException;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
@@ -79,8 +80,9 @@ public class StaffWritePlatformServiceJpaRepositoryImpl implements StaffWritePla
             handleStaffDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleStaffDataIntegrityIssues(command, dve.getCause(), dve);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleStaffDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 
@@ -112,8 +114,9 @@ public class StaffWritePlatformServiceJpaRepositoryImpl implements StaffWritePla
             handleStaffDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
         }catch (final PersistenceException dve) {
-            handleStaffDataIntegrityIssues(command, dve.getCause(), dve);
-            return CommandProcessingResult.empty();
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+        	handleStaffDataIntegrityIssues(command, throwable, dve);
+        	return CommandProcessingResult.empty();
         }
     }
 

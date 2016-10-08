@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.persistence.PersistenceException;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.fineract.accounting.producttoaccountmapping.service.ProductToGLAccountMappingWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
@@ -147,9 +148,10 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
         } catch (final DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return CommandProcessingResult.empty();
-        }catch(final PersistenceException ee) {
-        	handleDataIntegrityIssues(command, ee.getCause(), ee);
-            return CommandProcessingResult.empty();
+        }catch(final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+            handleDataIntegrityIssues(command, throwable, dve);
+         	return CommandProcessingResult.empty();
         }
 
     }
@@ -237,9 +239,10 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
         } catch (final DataIntegrityViolationException dve) {
             handleDataIntegrityIssues(command, dve.getMostSpecificCause(), dve);
             return new CommandProcessingResult(Long.valueOf(-1));
-        }catch(final PersistenceException ee) {
-        	handleDataIntegrityIssues(command, ee.getCause(), ee);
-            return CommandProcessingResult.empty();
+        }catch(final PersistenceException dve) {
+        	Throwable throwable = ExceptionUtils.getRootCause(dve.getCause()) ;
+            handleDataIntegrityIssues(command, throwable, dve);
+         	return CommandProcessingResult.empty();
         }
 
     }
@@ -291,17 +294,17 @@ public class LoanProductWritePlatformServiceJpaRepositoryImpl implements LoanPro
      */
     private void handleDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
 
-        if (realCause.getMessage().contains("external_id")) {
+        if (realCause.getMessage().contains("'external_id'")) {
 
             final String externalId = command.stringValueOfParameterNamed("externalId");
             throw new PlatformDataIntegrityException("error.msg.product.loan.duplicate.externalId", "Loan Product with externalId `"
                     + externalId + "` already exists", "externalId", externalId);
-        } else if (realCause.getMessage().contains("unq_name")) {
+        } else if (realCause.getMessage().contains("'unq_name'")) {
 
             final String name = command.stringValueOfParameterNamed("name");
             throw new PlatformDataIntegrityException("error.msg.product.loan.duplicate.name", "Loan product with name `" + name
                     + "` already exists", "name", name);
-        } else if (realCause.getMessage().contains("unq_short_name")) {
+        } else if (realCause.getMessage().contains("'unq_short_name'")) {
 
             final String shortName = command.stringValueOfParameterNamed("shortName");
             throw new PlatformDataIntegrityException("error.msg.product.loan.duplicate.short.name", "Loan product with short name `"
