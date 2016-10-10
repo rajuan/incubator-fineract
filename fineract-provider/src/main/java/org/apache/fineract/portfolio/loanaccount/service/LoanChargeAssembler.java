@@ -204,9 +204,12 @@ public class LoanChargeAssembler {
                     } else {
                         final Long loanChargeId = id;
                         final LoanCharge loanCharge = this.loanChargeRepository.findOne(loanChargeId);
-                        if (disbursementChargeIds.contains(loanChargeId) && loanCharge != null) {
-                        	loanCharge.update(amount, dueDate, numberOfRepayments);
-                        	loanCharges.add(loanCharge);
+                        if (loanCharge != null) {
+                            if(!loanCharge.isTrancheDisbursementCharge()
+                                    || disbursementChargeIds.contains(loanChargeId)){
+                                loanCharge.update(amount, dueDate, numberOfRepayments);
+                                loanCharges.add(loanCharge);
+                            }
                         }
                     }
                 }

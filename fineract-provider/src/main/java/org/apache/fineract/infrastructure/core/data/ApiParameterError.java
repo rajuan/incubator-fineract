@@ -59,7 +59,7 @@ public class ApiParameterError {
      */
     private List<ApiErrorMessageArg> args = new ArrayList<>();
 
-    private final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+    private final transient SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
 
     public static ApiParameterError generalError(final String globalisationMessageCode, final String defaultUserMessage,
             final Object... defaultUserMessageArgs) {
