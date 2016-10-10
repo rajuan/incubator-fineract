@@ -34,7 +34,7 @@ public class AccountNumberFormat extends AbstractPersistableCustom<Long> {
     @Column(name = AccountNumberFormatConstants.ACCOUNT_TYPE_ENUM_COLUMN_NAME, nullable = false)
     private Integer accountTypeEnum;
 
-    @Column(name = AccountNumberFormatConstants.PREFIX_TYPE_ENUM_COLUMN_NAME, nullable = false)
+    @Column(name = AccountNumberFormatConstants.PREFIX_TYPE_ENUM_COLUMN_NAME, nullable = true)
     private Integer prefixEnum;
 
     protected AccountNumberFormat() {

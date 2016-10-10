@@ -182,7 +182,7 @@ public class ReportWritePlatformServiceImpl implements ReportWritePlatformServic
      */
     private void handleReportDataIntegrityIssues(final JsonCommand command, final Throwable realCause, final Exception dve) {
 
-        if (realCause.getMessage().contains("unq_report_name")) {
+        if (realCause.getMessage().contains("unq_report_name") || realCause.getMessage().contains("report_name_UNIQUE")) {
             final String name = command.stringValueOfParameterNamed("reportName");
             throw new PlatformDataIntegrityException("error.msg.report.duplicate.name", "A report with name '" + name + "' already exists",
                     "name", name);
