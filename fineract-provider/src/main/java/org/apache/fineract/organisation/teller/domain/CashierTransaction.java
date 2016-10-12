@@ -58,10 +58,10 @@ public class CashierTransaction extends AbstractPersistableCustom<Long> {
     @Column(name = "txn_note", nullable = true)
     private String txnNote;
     
-    @Column(name = "entity_type", nullable = false)
+    @Column(name = "entity_type", nullable = true)
     private String entityType;
     
-    @Column(name = "entity_id", nullable = false)
+    @Column(name = "entity_id", nullable = true)
     private Long entityId;
 
     @Temporal(TemporalType.TIMESTAMP)

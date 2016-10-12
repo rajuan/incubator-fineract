@@ -24,8 +24,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
 
 @Entity
@@ -53,7 +51,7 @@ public final class ReportParameterUsage extends AbstractPersistableCustom<Long> 
         this.reportParameterName = reportParameterName;
     }
 
-    @Override
+    /*@Override
     public boolean equals(final Object obj) {
         if (obj == null) { return false; }
         if (obj == this) { return true; }
@@ -75,7 +73,7 @@ public final class ReportParameterUsage extends AbstractPersistableCustom<Long> 
                 .append(this.parameter.getId()) //
                 .append(this.reportParameterName) //
                 .toHashCode();
-    }
+    }*/
 
     public boolean hasIdOf(final Long id) {
         return getId().equals(id);

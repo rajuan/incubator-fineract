@@ -704,15 +704,6 @@ public class SavingsAccountCharge extends AbstractPersistableCustom<Long> {
                 .isEquals();
     }
 
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder(3, 5) //
-                .append(getId()) //
-                //.append(this.charge.getId()) //
-                .append(this.amount).append(getDueLocalDate()) //
-                .toHashCode();
-    }
-
     public BigDecimal updateWithdralFeeAmount(final BigDecimal transactionAmount) {
         BigDecimal amountPaybale = BigDecimal.ZERO;
         if (ChargeCalculationType.fromInt(this.chargeCalculation).isFlat()) {

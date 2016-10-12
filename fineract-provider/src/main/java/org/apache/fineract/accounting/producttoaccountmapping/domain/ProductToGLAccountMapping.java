@@ -35,11 +35,11 @@ import org.apache.fineract.portfolio.paymenttype.domain.PaymentType;
         "financial_account_type", "payment_type" }, name = "financial_action") })
 public class ProductToGLAccountMapping extends AbstractPersistableCustom<Long> {
 
-    @ManyToOne
+    @ManyToOne(optional=true)
     @JoinColumn(name = "gl_account_id")
     private GLAccount glAccount;
 
-    @Column(name = "product_id", nullable = false)
+    @Column(name = "product_id", nullable = true)
     private Long productId;
 
     @ManyToOne
@@ -50,10 +50,10 @@ public class ProductToGLAccountMapping extends AbstractPersistableCustom<Long> {
     @JoinColumn(name = "charge_id", nullable = true)
     private Charge charge;
 
-    @Column(name = "product_type", nullable = false)
+    @Column(name = "product_type", nullable = true)
     private int productType;
 
-    @Column(name = "financial_account_type", nullable = false)
+    @Column(name = "financial_account_type", nullable = true)
     private int financialAccountType;
 
     public static ProductToGLAccountMapping createNew(final GLAccount glAccount, final Long productId, final int productType,
