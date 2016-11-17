@@ -68,4 +68,5 @@ public interface ReadWriteNonCoreDataService {
 
     String getDataTableName(String Url);
 
+    Long countDatatableEntries(String datatableName,Long appTableId,String foreignKeyColumn);
 }
