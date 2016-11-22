@@ -30,7 +30,10 @@ CREATE TABLE `m_entity_datatable_check` (
 	INDEX `product_id` (`product_id`),
 	CONSTRAINT `m_entity_datatable_check_ibfk_1` FOREIGN KEY (`x_registered_table_name`)
 	    REFERENCES `x_registered_table` (`registered_table_name`)
-);
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+;
 
 
 INSERT INTO m_permission (grouping, code, entity_name, action_name, can_maker_checker)

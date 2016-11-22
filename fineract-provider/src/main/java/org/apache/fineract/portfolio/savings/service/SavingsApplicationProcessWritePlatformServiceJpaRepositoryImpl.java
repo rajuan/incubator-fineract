@@ -172,6 +172,15 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
             generateAccountNumber(account);
 
             final Long savingsId = account.getId();
+            if(command.parameterExists(SavingsApiConstants.datatables)){
+                this.entityDatatableChecksWritePlatformService.saveDatatables(StatusEnum.CREATE.getCode().longValue(),
+                        EntityTables.SAVING.getName(), savingsId, account.productId(),
+                        command.arrayOfParameterNamed(SavingsApiConstants.datatables));
+            }
+            this.entityDatatableChecksWritePlatformService.runTheCheckForProduct(savingsId,
+                    EntityTables.SAVING.getName(), StatusEnum.CREATE.getCode().longValue(),
+                    EntityTables.SAVING.getForeignKeyColumnNameOnDatatable(), account.productId());
+
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withEntityId(savingsId) //
@@ -424,7 +433,8 @@ public class SavingsApplicationProcessWritePlatformServiceJpaRepositoryImpl impl
                 this.noteRepository.save(note);
             }
         }
-        this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.SAVINGS_REJECT, constructEntityMap(BUSINESS_ENTITY.SAVING, savingsAccount));
+        this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.SAVINGS_REJECT,
+                constructEntityMap(BUSINESS_ENTITY.SAVING, savingsAccount));
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //
                 .withEntityId(savingsId) //

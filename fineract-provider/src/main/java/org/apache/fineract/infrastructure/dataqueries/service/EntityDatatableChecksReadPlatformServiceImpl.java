@@ -27,6 +27,8 @@ import java.util.List;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.infrastructure.dataqueries.data.*;
+import org.apache.fineract.infrastructure.dataqueries.domain.EntityDatatableChecks;
+import org.apache.fineract.infrastructure.dataqueries.domain.EntityDatatableChecksRepository;
 import org.apache.fineract.portfolio.loanproduct.data.LoanProductData;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.savings.data.SavingsProductData;
@@ -42,20 +44,25 @@ public class EntityDatatableChecksReadPlatformServiceImpl implements EntityDatat
 	private final JdbcTemplate jdbcTemplate;
 	private final RegisterDataTableMapper registerDataTableMapper;
 	private final EntityDataTableChecksMapper entityDataTableChecksMapper;
-
+	private final EntityDatatableChecksRepository entityDatatableChecksRepository;
+	private final ReadWriteNonCoreDataService readWriteNonCoreDataService;
 	private final LoanProductReadPlatformService loanProductReadPlatformService;
 	private final SavingsProductReadPlatformService savingsProductReadPlatformService;
 
 	@Autowired
 	public EntityDatatableChecksReadPlatformServiceImpl(final RoutingDataSource dataSource,
 			final LoanProductReadPlatformService loanProductReadPlatformService,
-			final SavingsProductReadPlatformService savingsProductReadPlatformService) {
+			final SavingsProductReadPlatformService savingsProductReadPlatformService,
+			final EntityDatatableChecksRepository entityDatatableChecksRepository,
+			final ReadWriteNonCoreDataService readWriteNonCoreDataService) {
 
 		this.jdbcTemplate = new JdbcTemplate(dataSource);
 		this.registerDataTableMapper = new RegisterDataTableMapper();
 		this.entityDataTableChecksMapper = new EntityDataTableChecksMapper();
 		this.loanProductReadPlatformService = loanProductReadPlatformService;
 		this.savingsProductReadPlatformService = savingsProductReadPlatformService;
+		this.entityDatatableChecksRepository = entityDatatableChecksRepository;
+		this.readWriteNonCoreDataService = readWriteNonCoreDataService;
 	}
 
 	@Override
@@ -87,6 +94,29 @@ public class EntityDatatableChecksReadPlatformServiceImpl implements EntityDatat
 
 		return this.jdbcTemplate.query(sql, this.entityDataTableChecksMapper);
 
+	}
+
+	@Override
+	public List<DatatableData> retrieveTemplates(final Long status, final String entity, final Long productId) {
+
+		List<EntityDatatableChecks> tableRequiredBeforeAction = null;
+		if(productId != null){
+			tableRequiredBeforeAction = this.entityDatatableChecksRepository
+				.findByEntityStatusAndProduct(entity, status, productId);
+		}
+
+		if (tableRequiredBeforeAction == null || tableRequiredBeforeAction.size() < 1) {
+			tableRequiredBeforeAction = this.entityDatatableChecksRepository.findByEntityStatusAndNoProduct(entity,
+				status);
+		}
+		if (tableRequiredBeforeAction != null && tableRequiredBeforeAction.size() > 0) {
+			List<DatatableData> ret = new ArrayList<>();
+			for (EntityDatatableChecks t : tableRequiredBeforeAction) {
+				ret.add(this.readWriteNonCoreDataService.retrieveDatatable(t.getDatatableName()));
+			}
+			return ret;
+		}
+		return null;
 	}
 
 	@Override

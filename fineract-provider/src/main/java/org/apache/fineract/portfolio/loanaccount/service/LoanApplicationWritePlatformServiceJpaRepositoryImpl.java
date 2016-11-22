@@ -384,6 +384,17 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                 this.accountAssociationsRepository.save(accountAssociations);
             }
 
+            if(command.parameterExists(LoanApiConstants.datatables)){
+                this.entityDatatableChecksWritePlatformService.saveDatatables(StatusEnum.CREATE.getCode().longValue(),
+                        EntityTables.LOAN.getName(), newLoanApplication.getId(), newLoanApplication.productId(),
+                        command.arrayOfParameterNamed(LoanApiConstants.datatables));
+            }
+
+            this.entityDatatableChecksWritePlatformService.runTheCheckForProduct(newLoanApplication.getId(),
+                    EntityTables.LOAN.getName(), StatusEnum.CREATE.getCode().longValue(),
+                    EntityTables.LOAN.getForeignKeyColumnNameOnDatatable(), newLoanApplication.productId());
+
+
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withEntityId(newLoanApplication.getId()) //
