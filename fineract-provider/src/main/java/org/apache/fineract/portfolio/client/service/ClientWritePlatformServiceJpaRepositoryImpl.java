@@ -270,6 +270,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             
             final Client newClient = Client.createNew(currentUser, clientOffice, clientParentGroup, staff, savingsProductId, gender,
                     clientType, clientClassification, legalFormValue, command);
+            this.businessEventNotifierService.notifyBusinessEventToBeExecuted(BUSINESS_EVENTS.CLIENTS_CREATE,
+                    constructEntityMap(BUSINESS_ENTITY.CLIENT, newClient));
             boolean rollbackTransaction = false;
             if (newClient.isActive()) {
                 validateParentGroupRulesBeforeClientActivation(newClient);
@@ -304,6 +306,17 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
                 this.addressWritePlatformService.addNewClientAddress(newClient, command);
             }
 
+            if(command.parameterExists(ClientApiConstants.datatables)){
+                this.entityDatatableChecksWritePlatformService.saveDatatables(StatusEnum.CREATE.getCode().longValue(),
+                        EntityTables.CLIENT.getName(), newClient.getId(), null,
+                        command.arrayOfParameterNamed(ClientApiConstants.datatables));
+            }
+
+            this.entityDatatableChecksWritePlatformService.runTheCheck(newClient.getId(), EntityTables.CLIENT.getName(),
+                    StatusEnum.CREATE.getCode().longValue(), EntityTables.CLIENT.getForeignKeyColumnNameOnDatatable());
+
+            this.businessEventNotifierService.notifyBusinessEventWasExecuted(BUSINESS_EVENTS.CLIENTS_CREATE,
+                    constructEntityMap(BUSINESS_ENTITY.CLIENT, newClient));
             return new CommandProcessingResultBuilder() //
                     .withCommandId(command.commandId()) //
                     .withOfficeId(clientOffice.getId()) //

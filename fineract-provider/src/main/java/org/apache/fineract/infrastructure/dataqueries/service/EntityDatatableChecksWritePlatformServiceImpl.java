@@ -18,13 +18,20 @@
  */
 package org.apache.fineract.infrastructure.dataqueries.service;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.fineract.infrastructure.configuration.domain.ConfigurationDomainService;
 import org.apache.fineract.infrastructure.core.api.JsonCommand;
+import org.apache.fineract.infrastructure.core.data.ApiParameterError;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResult;
 import org.apache.fineract.infrastructure.core.data.CommandProcessingResultBuilder;
+import org.apache.fineract.infrastructure.core.exception.PlatformApiDataValidationException;
 import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
+import org.apache.fineract.infrastructure.core.serialization.FromJsonHelper;
 import org.apache.fineract.infrastructure.dataqueries.data.DatatableData;
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.domain.EntityDatatableChecks;
@@ -33,15 +40,17 @@ import org.apache.fineract.infrastructure.dataqueries.exception.*;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.loanproduct.service.LoanProductReadPlatformService;
 import org.apache.fineract.portfolio.savings.service.SavingsProductReadPlatformService;
+import org.apache.fineract.useradministration.domain.AppUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.PersistenceException;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 @Service
 public class EntityDatatableChecksWritePlatformServiceImpl implements EntityDatatableChecksWritePlatformService {
@@ -54,6 +63,8 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
 	private final ReadWriteNonCoreDataService readWriteNonCoreDataService;
 	private final LoanProductReadPlatformService loanProductReadPlatformService;
 	private final SavingsProductReadPlatformService savingsProductReadPlatformService;
+	private final FromJsonHelper fromApiJsonHelper;
+	private final ConfigurationDomainService configurationDomainService;
 
 	@Autowired
 	public EntityDatatableChecksWritePlatformServiceImpl(final PlatformSecurityContext context,
@@ -61,14 +72,17 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
 			final EntityDatatableChecksRepository entityDatatableChecksRepository,
 			final ReadWriteNonCoreDataService readWriteNonCoreDataService,
 			final LoanProductReadPlatformService loanProductReadPlatformService,
-			final SavingsProductReadPlatformService savingsProductReadPlatformService) {
+			final SavingsProductReadPlatformService savingsProductReadPlatformService,
+			final FromJsonHelper fromApiJsonHelper,
+			final ConfigurationDomainService configurationDomainService) {
 		this.context = context;
 		this.fromApiJsonDeserializer = fromApiJsonDeserializer;
 		this.entityDatatableChecksRepository = entityDatatableChecksRepository;
 		this.readWriteNonCoreDataService = readWriteNonCoreDataService;
 		this.loanProductReadPlatformService = loanProductReadPlatformService;
 		this.savingsProductReadPlatformService = savingsProductReadPlatformService;
-
+		this.fromApiJsonHelper = fromApiJsonHelper;
+		this.configurationDomainService = configurationDomainService;
 	}
 
 	@Transactional
@@ -152,7 +166,7 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
 				.findByEntityAndStatus(entityName, statusCode);
 
 		if (tableRequiredBeforeClientActivation != null) {
-
+			List<String> reqDatatables = new ArrayList<>();
 			for (EntityDatatableChecks t : tableRequiredBeforeClientActivation) {
 
 				final String datatableName = t.getDatatableName();
@@ -161,8 +175,11 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
 
 				logger.info("The are " + countEntries + " entries in the table " + datatableName);
 				if (countEntries.intValue() == 0) {
-					throw new DatatabaleEntryRequiredException(datatableName);
+					reqDatatables.add(datatableName);
 				}
+			}
+			if(reqDatatables.size() > 0){
+				throw new DatatabaleEntryRequiredException(reqDatatables.toString());
 			}
 		}
 
@@ -178,7 +195,7 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
 					statusCode);
 		}
 		if (tableRequiredBeforAction != null) {
-
+			List<String> reqDatatables = new ArrayList<>();
 			for (EntityDatatableChecks t : tableRequiredBeforAction) {
 
 				final String datatableName = t.getDatatableName();
@@ -187,11 +204,71 @@ public class EntityDatatableChecksWritePlatformServiceImpl implements EntityData
 
 				logger.info("The are " + countEntries + " entries in the table " + datatableName);
 				if (countEntries.intValue() == 0) {
-					throw new DatatabaleEntryRequiredException(datatableName);
+					reqDatatables.add(datatableName);
 				}
+			}
+			if(reqDatatables.size() > 0){
+				throw new DatatabaleEntryRequiredException(reqDatatables.toString());
 			}
 		}
 
+	}
+
+	@Transactional
+	@Override
+	public boolean saveDatatables(final Long status, final String entity, final Long entityId,
+		final Long productId, final JsonArray datatableDatas) {
+		final AppUser user = this.context.authenticatedUser();
+		boolean isMakerCheckerEnabled = false;
+		if(datatableDatas != null && datatableDatas.size() > 0){
+			for(JsonElement element : datatableDatas){
+				final String datatableName = this.fromApiJsonHelper.extractStringNamed("registeredTableName",element);
+				final JsonObject datatableData = this.fromApiJsonHelper.extractJsonObjectNamed("data", element);
+
+				if(datatableName == null || datatableData == null){
+					final ApiParameterError error = ApiParameterError.generalError("registeredTableName.and.data.parameters.must.be.present.in.each.list.items.in.datatables",
+						"registeredTableName and data parameters must be present in each list items in datatables");
+					List<ApiParameterError> errors = new ArrayList<>();
+					errors.add(error);
+					throw new PlatformApiDataValidationException(errors);
+				}
+				final String taskPermissionName = "CREATE_" + datatableName;
+				user.validateHasPermissionTo(taskPermissionName);
+				if(this.configurationDomainService.isMakerCheckerEnabledForTask(taskPermissionName)){
+					isMakerCheckerEnabled = true;
+				}
+				try{
+					this.readWriteNonCoreDataService.createNewDatatableEntry(datatableName, entityId, datatableData.toString());
+				} catch(PlatformApiDataValidationException e){
+					List<ApiParameterError> errors = e.getErrors();
+					for(ApiParameterError error : e.getErrors()){
+						error.setParameterName("datatables."+datatableName+"."+error.getParameterName());
+					}
+					throw e;
+				}
+			}
+		}
+		return isMakerCheckerEnabled;
+	}
+
+	private List<String> getDatatableNames(Long status, String entity, Long productId) {
+		List<String> ret = new ArrayList<>();
+		List<EntityDatatableChecks> tableRequiredBeforeAction = null;
+		if(productId != null){
+			tableRequiredBeforeAction = this.entityDatatableChecksRepository
+				.findByEntityStatusAndProduct(entity, status, productId);
+		}
+
+		if (tableRequiredBeforeAction == null || tableRequiredBeforeAction.size() < 1) {
+			tableRequiredBeforeAction = this.entityDatatableChecksRepository.findByEntityStatusAndNoProduct(entity,
+				status);
+		}
+		if (tableRequiredBeforeAction != null && tableRequiredBeforeAction.size() > 0) {
+			for (EntityDatatableChecks t : tableRequiredBeforeAction) {
+				ret.add(t.getDatatableName());
+			}
+		}
+		return ret;
 	}
 
 	@Transactional
