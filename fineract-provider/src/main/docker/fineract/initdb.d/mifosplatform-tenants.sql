@@ -1,6 +1,6 @@
--- MySQL dump 10.13  Distrib 5.7.15, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.17, for Linux (x86_64)
 --
--- Host: 172.26.0.2    Database: mifosplatform-tenants
+-- Host: 127.0.0.1    Database: mifosplatform-tenants
 -- ------------------------------------------------------
 -- Server version	5.6.33
 
@@ -14,10 +14,6 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
--- DROP DATABASE IF EXISTS `mifosplatform-tenants`;
-CREATE DATABASE IF NOT EXISTS `mifosplatform-tenants`;
-USE `mifosplatform-tenants`;
 
 --
 -- Table structure for table `schema_version`
@@ -51,7 +47,7 @@ CREATE TABLE `schema_version` (
 
 LOCK TABLES `schema_version` WRITE;
 /*!40000 ALTER TABLE `schema_version` DISABLE KEYS */;
-INSERT INTO `schema_version` VALUES (1,1,'1','mifos-platform-shared-tenants','SQL','V1__mifos-platform-shared-tenants.sql',98913810,'root','2016-09-15 08:40:52',104,1),(2,2,'2','externalize-connection-properties','SQL','V2__externalize-connection-properties.sql',-862567945,'root','2016-09-15 08:40:52',30,1),(3,3,'3','deadlock-retry-properties','SQL','V3__deadlock-retry-properties.sql',1523909379,'root','2016-09-15 08:40:52',34,1),(4,4,'4','introduced oltpId reportId columns and tenants server connection table','SQL','V4__introduced_oltpId_reportId_columns_and_tenants_server_connection_table.sql',417291024,'root','2016-09-15 08:40:52',147,1);
+INSERT INTO `schema_version` VALUES (1,1,'1','mifos-platform-shared-tenants','SQL','V1__mifos-platform-shared-tenants.sql',98913810,'root','2017-02-22 15:00:50',161,1),(2,2,'2','externalize-connection-properties','SQL','V2__externalize-connection-properties.sql',-862567945,'root','2017-02-22 15:00:50',33,1),(3,3,'3','deadlock-retry-properties','SQL','V3__deadlock-retry-properties.sql',1523909379,'root','2017-02-22 15:00:50',32,1),(4,4,'4','introduced oltpId reportId columns and tenants server connection table','SQL','V4__introduced_oltpId_reportId_columns_and_tenants_server_connection_table.sql',417291024,'root','2017-02-22 15:00:50',88,1);
 /*!40000 ALTER TABLE `schema_version` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -95,7 +91,7 @@ CREATE TABLE `tenant_server_connections` (
 
 LOCK TABLES `tenant_server_connections` WRITE;
 /*!40000 ALTER TABLE `tenant_server_connections` DISABLE KEYS */;
-INSERT INTO `tenant_server_connections` VALUES (1,'db','mifostenant-default','3306','root','mysql',1,5,30000,1,60,1,50,1,40,20,10,60,34000,60000,0,1);
+INSERT INTO `tenant_server_connections` VALUES (1,'localhost','mifostenant-default','3306','root','mysql',1,5,30000,1,60,1,50,1,40,20,10,60,34000,60000,0,1);
 /*!40000 ALTER TABLE `tenant_server_connections` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -131,7 +127,7 @@ CREATE TABLE `tenants` (
 
 LOCK TABLES `tenants` WRITE;
 /*!40000 ALTER TABLE `tenants` DISABLE KEYS */;
-INSERT INTO `tenants` VALUES (1,'default','Gentera Tenant','America/Mexico_City',NULL,NULL,NULL,NULL,1,1);
+INSERT INTO `tenants` VALUES (1,'default','Default Demo Tenant','Asia/Kolkata',NULL,NULL,NULL,NULL,1,1);
 /*!40000 ALTER TABLE `tenants` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -170,4 +166,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-09-19 15:35:37
+-- Dump completed on 2017-02-23 17:21:49
