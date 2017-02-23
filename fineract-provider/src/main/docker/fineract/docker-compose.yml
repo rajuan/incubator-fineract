@@ -1,0 +1,31 @@
+version: "2"
+services:
+  db:
+    image: mysql/mysql-server:5.6
+    environment:
+      MYSQL_DATABASE: "mysql"
+      MYSQL_ROOT_PASSWORD: "mysql"
+    expose:
+      - "3306"
+    ports:
+      - "3306:3306"
+    volumes:
+      - /data/mysql/fineract:/var/lib/mysql
+      - ./initdb.d/mifosplatform-tenants.sql:/docker-entrypoint-initdb.d/mifosplatform-tenants.sql
+      - ./initdb.d/mifostenant-default.sql:/docker-entrypoint-initdb.d/mifostenant-default.sql
+  fineract_provider:
+    image: fineract-provider:latest
+    expose:
+      - "8443"
+    ports:
+      - "8443:8443"
+    depends_on:
+      - db
+  fineract_ui:
+    image: fineract-ui:latest
+    expose:
+      - "80"
+    ports:
+      - "9000:80"
+    depends_on:
+      - fineract_provider
