@@ -33,7 +33,9 @@ public class ThreadLocalContextUtil {
     private static final ThreadLocal<FineractPlatformTenant> tenantcontext = new ThreadLocal<>();
     
     private static final ThreadLocal<String> authTokenContext = new ThreadLocal<>();
-    
+
+    private static final ThreadLocal<String> runAsContext = new ThreadLocal<>();
+
     public static void setTenant(final FineractPlatformTenant tenant) {
         Assert.notNull(tenant, "tenant cannot be null");
         tenantcontext.set(tenant);
@@ -58,13 +60,21 @@ public class ThreadLocalContextUtil {
     public static void clearDataSourceContext() {
         contextHolder.remove();
     }
-    
+
     public static void setAuthToken(final String authToken) {
-    	authTokenContext.set(authToken);
+        authTokenContext.set(authToken);
     }
 
     public static String getAuthToken() {
         return authTokenContext.get();
+    }
+
+    public static void setRunAs(final String username) {
+        runAsContext.set(username);
+    }
+
+    public static String getRunAs() {
+        return runAsContext.get();
     }
 
 }

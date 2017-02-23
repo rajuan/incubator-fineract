@@ -71,6 +71,7 @@ public class TenantAwareTenantIdentifierFilter extends GenericFilterBean {
     private final CacheWritePlatformService cacheWritePlatformService;
 
     private final String tenantRequestHeader = "Fineract-Platform-TenantId";
+    private final String runAsRequestHeader = "Fineract-Platform-RunAs";
     private final boolean exceptionIfHeaderMissing = true;
     private final String apiUri = "/api/v1/";
 
@@ -115,6 +116,15 @@ public class TenantAwareTenantIdentifierFilter extends GenericFilterBean {
                 if (tenantIdentifier == null && this.exceptionIfHeaderMissing) { throw new InvalidTenantIdentiferException(
                         "No tenant identifier found: Add request header of '" + this.tenantRequestHeader
                                 + "' or add the parameter 'tenantIdentifier' to query string of request URL."); }
+
+                String runAs = request.getHeader(this.runAsRequestHeader);
+                if (org.apache.commons.lang.StringUtils.isBlank(runAs)) {
+                    runAs = request.getParameter("runAs");
+                }
+
+                if (!org.apache.commons.lang.StringUtils.isBlank(runAs)) {
+                    ThreadLocalContextUtil.setRunAs(runAs);
+                }
 
                 String pathInfo = request.getRequestURI();
                 boolean isReportRequest = false;

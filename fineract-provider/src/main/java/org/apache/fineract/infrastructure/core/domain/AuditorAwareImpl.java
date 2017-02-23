@@ -18,6 +18,8 @@
  */
 package org.apache.fineract.infrastructure.core.domain;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.fineract.infrastructure.core.service.ThreadLocalContextUtil;
 import org.apache.fineract.useradministration.domain.AppUser;
 import org.apache.fineract.useradministration.domain.AppUserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +42,15 @@ public class AuditorAwareImpl implements AuditorAware<AppUser> {
             final Authentication authentication = securityContext.getAuthentication();
             if (authentication != null) {
                 currentUser = (AppUser) authentication.getPrincipal();
+
+                // NOTE: only super-users can do this
+                if(currentUser!=null && currentUser.hasIdOf(1L)) {
+                    String runAs = ThreadLocalContextUtil.getRunAs();
+
+                    if(!StringUtils.isBlank(runAs)) {
+                        return this.userRepository.findAppUserByName(runAs);
+                    }
+                }
             } else {
                 currentUser = retrieveSuperUser();
             }
