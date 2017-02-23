@@ -127,7 +127,7 @@ CREATE TABLE `tenants` (
 
 LOCK TABLES `tenants` WRITE;
 /*!40000 ALTER TABLE `tenants` DISABLE KEYS */;
-INSERT INTO `tenants` VALUES (1,'default','Default Demo Tenant','Asia/Kolkata',NULL,NULL,NULL,NULL,1,1);
+INSERT INTO `tenants` VALUES (1,'default','Gentera','America/Mexico_City',NULL,NULL,NULL,NULL,1,1);
 /*!40000 ALTER TABLE `tenants` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -166,4 +166,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-02-23 17:21:49
+-- Dump completed on 2017-02-23 22:51:07
