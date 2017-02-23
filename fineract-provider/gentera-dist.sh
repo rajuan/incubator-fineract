@@ -46,6 +46,15 @@ rm -rf $TOMCAT_DIR/webapps/manager
 rm -rf $TOMCAT_DIR/webapps/ROOT
 rm -rf $GENTERA_DIR/apache-tomcat-$TOMCAT_VERSION.tar.gz
 
+#echo "#!/bin/sh" > $GENTERA_DIR/install.sh
+echo "uname -a" >> $GENTERA_DIR/install.sh
+echo "yum install wget -y" >> $GENTERA_DIR/install.sh
+echo "wget --no-check-certificate --no-cookies --header \"Cookie: oraclelicense=accept-securebackup-cookie\" http://download.oracle.com/otn-pub/java/jdk/8u112-b15/jdk-8u112-linux-x64.tar.gz" >> $GENTERA_DIR/install.sh
+echo "tar xvzf jdk-8u112-linux-x64.tar.gz" >> $GENTERA_DIR/install.sh
+echo "wget -O gentera.tar.gz https://drive.google.com/file/d/0B5J1ZxWsvybwMzM1el96eEw0aW8/view?usp=sharing" >> $GENTERA_DIR/install.sh
+echo "tar xvzf gentera.tar.gz" >> $GENTERA_DIR/install.sh
+chmod +x $GENTERA_DIR/install.sh
+
 # package
 cd $CURRENT_DIR/build
 tar c gentera > gentera.tar
