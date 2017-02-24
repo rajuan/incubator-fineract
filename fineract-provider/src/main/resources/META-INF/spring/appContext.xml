@@ -44,6 +44,7 @@
 										  org.apache.fineract.commands.*,
 										  org.apache.fineract.audit.*,
 										  org.apache.fineract.infrastructure.*,
+										  org.apache.fineract.gentera.*,
 										  org.apache.fineract.scheduledjobs.*,
 										  org.apache.fineract.organisation.*,
 										  org.apache.fineract.portfolio.loanaccount.*,
