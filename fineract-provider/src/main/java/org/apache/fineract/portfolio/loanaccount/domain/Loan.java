@@ -3015,10 +3015,13 @@ public class Loan extends AbstractPersistableCustom<Long> {
                     loanTransactionDate, getDisbursementDate());
         }
 
+        // gentera: make future payments
+        /*
         if (loanTransactionDate.isAfter(DateUtils.getLocalDateOfTenant())) {
             final String errorMessage = "The transaction date cannot be in the future.";
             throw new InvalidLoanStateTransitionException("transaction", "cannot.be.a.future.date", errorMessage, loanTransactionDate);
         }
+        */
 
         if (loanTransaction.isInterestWaiver()) {
             Money totalInterestOutstandingOnLoan = getTotalInterestOutstandingOnLoan();
