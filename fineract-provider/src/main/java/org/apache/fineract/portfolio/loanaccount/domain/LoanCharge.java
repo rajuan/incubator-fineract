@@ -167,6 +167,9 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
                     amountPercentageAppliedTo = loan.getTotalInterest();
                 }
             break;
+            case PERCENT_OF_VAT_FREQUENCY:
+                amountPercentageAppliedTo = loan.getPrincpal().getAmount();
+            break;
             default:
             break;
         }
@@ -278,6 +281,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
             case PERCENT_OF_AMOUNT_AND_INTEREST:
             case PERCENT_OF_INTEREST:
             case PERCENT_OF_DISBURSEMENT_AMOUNT:
+            case PERCENT_OF_VAT_FREQUENCY:
                 this.percentage = chargeAmount;
                 this.amountPercentageAppliedTo = amountPercentageAppliedTo;
                 if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
@@ -386,6 +390,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                 case PERCENT_OF_INTEREST:
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
+                case PERCENT_OF_VAT_FREQUENCY:
                     this.percentage = amount;
                     this.amountPercentageAppliedTo = loanPrincipal;
                     if (loanCharge.compareTo(BigDecimal.ZERO) == 0) {
@@ -418,6 +423,9 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
                     LoanTrancheDisbursementCharge loanTrancheDisbursementCharge = this.loanTrancheDisbursementCharge;
                     amountPercentageAppliedTo = loanTrancheDisbursementCharge.getloanDisbursementDetails().principal();
+                break;
+                case PERCENT_OF_VAT_FREQUENCY:
+                    amountPercentageAppliedTo = this.loan.getPrincpal().getAmount();
                 break;
                 default:
                 break;
@@ -465,6 +473,7 @@ public class LoanCharge extends AbstractPersistableCustom<Long> {
                 case PERCENT_OF_AMOUNT_AND_INTEREST:
                 case PERCENT_OF_INTEREST:
                 case PERCENT_OF_DISBURSEMENT_AMOUNT:
+                case PERCENT_OF_VAT_FREQUENCY:
                     this.percentage = newValue;
                     this.amountPercentageAppliedTo = amount;
                     loanCharge = BigDecimal.ZERO;

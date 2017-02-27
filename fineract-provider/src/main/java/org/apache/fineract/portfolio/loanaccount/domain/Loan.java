@@ -89,6 +89,7 @@ import org.apache.fineract.portfolio.client.domain.Client;
 import org.apache.fineract.portfolio.collateral.data.CollateralData;
 import org.apache.fineract.portfolio.collateral.domain.LoanCollateral;
 import org.apache.fineract.portfolio.common.domain.DayOfWeekType;
+import org.apache.fineract.portfolio.common.domain.DaysInYearType;
 import org.apache.fineract.portfolio.common.domain.NthDayType;
 import org.apache.fineract.portfolio.common.domain.PeriodFrequencyType;
 import org.apache.fineract.portfolio.floatingrates.data.FloatingRateDTO;
@@ -137,6 +138,8 @@ import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.google.gson.JsonArray;
@@ -149,6 +152,7 @@ import com.google.gson.JsonPrimitive;
 @Table(name = "m_loan", uniqueConstraints = { @UniqueConstraint(columnNames = { "account_no" }, name = "loan_account_no_UNIQUE"),
         @UniqueConstraint(columnNames = { "external_id" }, name = "loan_externalid_UNIQUE") })
 public class Loan extends AbstractPersistableCustom<Long> {
+    private static final Logger logger = LoggerFactory.getLogger(Loan.class);
 
     /** Disable optimistic locking till batch jobs failures can be fixed **/
     @Version
@@ -874,10 +878,54 @@ public class Loan extends AbstractPersistableCustom<Long> {
                     amount = getPrincpal().getAmount();
                 }
             break;
+            case PERCENT_OF_VAT_FREQUENCY:
+                try {
+                    final BigDecimal daysInYear = BigDecimal.valueOf(this.loanRepaymentScheduleDetail.fetchDaysInYearType().equals(DaysInYearType.ACTUAL) ? 365 : this.loanRepaymentScheduleDetail.fetchDaysInYearType().getValue());
+                    logger.error(">>>>>> GENTERA >>>>>> principal      : {}", getPrincpal().getAmount());
+                    logger.error(">>>>>> GENTERA >>>>>> days           : {}", daysInYear);
+                    final BigDecimal installment = getRepaymentScheduleInstallments().get(0).getDue(getCurrency()).getAmount();
+                    logger.error(">>>>>> GENTERA >>>>>> installment    : {}", installment);
+                    final BigDecimal repayments = BigDecimal.valueOf(getRepaymentScheduleInstallments().size());
+                    logger.error(">>>>>> GENTERA >>>>>> repayments     : {}", repayments);
+                    final BigDecimal vat = BigDecimal.valueOf(1.16); // TODO: find configuration
+                    logger.error(">>>>>> GENTERA >>>>>> vat            : {}", vat);
+                    final BigDecimal repayEvery = BigDecimal.valueOf(this.loanRepaymentScheduleDetail.getRepayEvery()); // TODO: this only works for days
+                    logger.error(">>>>>> GENTERA >>>>>> every (days)   : {}", repayEvery);
+                    final BigDecimal interestRate = this.loanRepaymentScheduleDetail.getNominalInterestRatePerPeriod();
+                    logger.error(">>>>>> GENTERA >>>>>> interest       : {}", interestRate);
+                    logger.error(">>>>>> GENTERA >>>>>> charge         : {}", loanCharge.getAmount(getCurrency()).getAmount());
+                    final BigDecimal vatFrequencyRate = interestRate.divide(vat, 3, RoundingMode.HALF_EVEN).divide(daysInYear, 3, RoundingMode.HALF_EVEN).multiply(repayEvery).multiply(vat);
+                    logger.error(">>>>>> GENTERA >>>>>> vat frequency  : {}", vatFrequencyRate);
+                    BigDecimal pmt = pmt(vatFrequencyRate.divide(BigDecimal.valueOf(100.0), 5, BigDecimal.ROUND_HALF_EVEN), repayments, getPrincpal().getAmount()).setScale(0, BigDecimal.ROUND_UP);
+                    logger.error(">>>>>> GENTERA >>>>>> pmt            : {}", pmt);
+                    BigDecimal pv = pv(vatFrequencyRate.divide(BigDecimal.valueOf(100.0), 5, BigDecimal.ROUND_HALF_EVEN), repayments, pmt);
+                    logger.error(">>>>>> GENTERA >>>>>> present value  : {}", pv);
+                    amount = pv.subtract(getPrincpal().getAmount());
+                    logger.error(">>>>>> GENTERA >>>>>> result  : {}", amount);
+                } catch(Exception e) {
+                    logger.error(e.toString(), e);
+                }
+            break;
             default:
             break;
         }
+        logger.error(">>>>>> GENTERA >>>>>> amount      : {} - {}", amount, loanCharge.getChargeCalculation());
         return amount;
+    }
+
+    private BigDecimal pmt(BigDecimal rate, BigDecimal nper, BigDecimal pmt)
+    {
+        MathContext CTX = new MathContext(10, RoundingMode.HALF_EVEN);
+        return rate.divide(BigDecimal.ONE.subtract(BigDecimal.ONE.add(rate).pow(nper.negate().intValue(), CTX)), CTX).multiply(pmt);
+    }
+
+    private BigDecimal pv(BigDecimal rate, BigDecimal nper, BigDecimal pmt)
+    {
+        MathContext CTX = new MathContext(10, RoundingMode.HALF_EVEN);
+        BigDecimal a = pmt.divide(rate, CTX);
+        BigDecimal b = BigDecimal.ONE.subtract(BigDecimal.ONE.add(rate).pow(nper.negate().intValue(), CTX));
+        BigDecimal c = a.multiply(b, CTX);
+        return pmt.divide(rate, CTX).multiply(BigDecimal.ONE.subtract(BigDecimal.ONE.add(rate).pow(nper.negate().intValue(), CTX)));
     }
 
     /**

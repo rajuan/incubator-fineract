@@ -157,6 +157,10 @@ public class ChargeEnumerations {
             	optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getValue().longValue(),
             	        ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getCode(), "% Disbursement Amount");
             break;
+            case PERCENT_OF_VAT_FREQUENCY:
+                optionData = new EnumOptionData(ChargeCalculationType.PERCENT_OF_VAT_FREQUENCY.getValue().longValue(),
+                        ChargeCalculationType.PERCENT_OF_VAT_FREQUENCY.getCode(), "% VAT Frequency");
+            break;
             default:
                 optionData = new EnumOptionData(ChargeCalculationType.INVALID.getValue().longValue(),
                         ChargeCalculationType.INVALID.getCode(), "Invalid");

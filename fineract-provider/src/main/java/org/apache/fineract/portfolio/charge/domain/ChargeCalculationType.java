@@ -25,7 +25,8 @@ public enum ChargeCalculationType {
     PERCENT_OF_AMOUNT(2, "chargeCalculationType.percent.of.amount"), //
     PERCENT_OF_AMOUNT_AND_INTEREST(3, "chargeCalculationType.percent.of.amount.and.interest"), //
     PERCENT_OF_INTEREST(4, "chargeCalculationType.percent.of.interest"),
-    PERCENT_OF_DISBURSEMENT_AMOUNT(5,"chargeCalculationType.percent.of.disbursement.amount");
+    PERCENT_OF_DISBURSEMENT_AMOUNT(5,"chargeCalculationType.percent.of.disbursement.amount"),
+    PERCENT_OF_VAT_FREQUENCY(100,"chargeCalculationType.percent.of.vat.frequency");
 
     private final Integer value;
     private final String code;
@@ -46,7 +47,7 @@ public enum ChargeCalculationType {
     public static Object[] validValuesForLoan() {
         return new Integer[] { ChargeCalculationType.FLAT.getValue(), ChargeCalculationType.PERCENT_OF_AMOUNT.getValue(),
                 ChargeCalculationType.PERCENT_OF_AMOUNT_AND_INTEREST.getValue(), ChargeCalculationType.PERCENT_OF_INTEREST.getValue(),
-                ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getValue()};
+                ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getValue(), ChargeCalculationType.PERCENT_OF_VAT_FREQUENCY.getValue()};
     }
 
     public static Object[] validValuesForSavings() {
@@ -87,6 +88,9 @@ public enum ChargeCalculationType {
             case 5:
             	chargeCalculationType = PERCENT_OF_DISBURSEMENT_AMOUNT;
             break;
+            case 100:
+                chargeCalculationType = PERCENT_OF_VAT_FREQUENCY;
+            break;
         }
         return chargeCalculationType;
     }
@@ -116,10 +120,14 @@ public enum ChargeCalculationType {
     }
 
     public boolean isPercentageBased() {
-        return isPercentageOfAmount() || isPercentageOfAmountAndInterest() || isPercentageOfInterest() || isPercentageOfDisbursementAmount();
+        return isPercentageOfAmount() || isPercentageOfAmountAndInterest() || isPercentageOfInterest() || isPercentageOfDisbursementAmount() || isPercentageOfVatFrequency();
     }
     
     public boolean isPercentageOfDisbursementAmount(){
     	return this.value.equals(ChargeCalculationType.PERCENT_OF_DISBURSEMENT_AMOUNT.getValue());
+    }
+
+    public boolean isPercentageOfVatFrequency(){
+        return this.value.equals(ChargeCalculationType.PERCENT_OF_VAT_FREQUENCY.getValue());
     }
 }
