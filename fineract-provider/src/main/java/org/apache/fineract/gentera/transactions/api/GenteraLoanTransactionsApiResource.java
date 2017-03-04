@@ -28,7 +28,6 @@ import org.apache.fineract.organisation.monetary.data.CurrencyData;
 import org.apache.fineract.portfolio.calendar.data.CalendarData;
 import org.apache.fineract.portfolio.calendar.domain.CalendarEntityType;
 import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
-import org.apache.fineract.portfolio.client.data.ClientData;
 import org.apache.fineract.portfolio.client.service.ClientReadPlatformService;
 import org.apache.fineract.portfolio.group.data.GroupGeneralData;
 import org.apache.fineract.portfolio.group.service.GroupReadPlatformService;
@@ -114,8 +113,35 @@ public class GenteraLoanTransactionsApiResource {
         Collection<MeetingData> meetings = meetingReadPlatformService.retrieveMeetingsByEntity(groupId, CalendarEntityType.GROUPS.getValue(), 100);
         // Collection<ClientData> members = this.clientReadPlatformService.retrieveActiveClientMembersOfGroup(groupId);
 
-        // String sql = "select l.group_id, l.client_id, cl.firstname, cl.lastname, cl.external_id, lt.*, c.* from m_loan l left join m_loan_transaction lt on lt.loan_id = l.id and lt.transaction_type_enum = 2 join m_client cl on cl.id = l.client_id join m_currency c on c.code = l.currency_code where lt.id>0 and l.group_id = ? and lt.transaction_date = ? group by transaction_date order by transaction_date";
-        String sql = "select l.group_id, l.client_id, cl.firstname, cl.lastname, cl.external_id, lt.*, c.* from m_client cl left outer join m_loan l on cl.id=l.client_id left outer join m_loan_transaction lt on lt.loan_id = l.id and lt.transaction_type_enum = 2 left outer join m_currency c on c.code = l.currency_code where l.group_id = ? and lt.transaction_date = ? group by transaction_date order by transaction_date";
+        // String sql = "select gc.group_id, gc.client_id, cl.firstname, cl.firstname, cl.lastname, cl.external_id, lt.*, c.* from m_client cl left outer join m_group_client gc on cl.id = gc.client_id left outer join m_loan l on cl.id = l.client_id left outer join m_loan_transaction lt on lt.loan_id = l.id and (lt.transaction_type_enum = 2 or lt.transaction_type_enum is null) where gc.group_id = ? and (lt.transaction_date = ? or lt.transaction_date is null) group by gc.group_id, gc.client_id, lt.transaction_date order by lt.transaction_date";
+        String sql = "select " +
+                "gc.group_id, " +
+                "gc.client_id, " +
+                "cl.firstname, " +
+                "cl.firstname, " +
+                "cl.lastname, " +
+                "cl.external_id, " +
+                "cv.code_value as role, " +
+                "lrs.duedate, " +
+                "ai.additional_family_name, " +
+                "ai.account_number, " +
+                "l.id as orig_loan_id, " +
+                "lrs.principal_amount, " +
+                "lrs.interest_amount, " +
+                "(lrs.principal_amount + lrs.interest_amount) as due_amount, " +
+                "lt.* " +
+                "from m_client cl " +
+                "left outer join addition_information ai on cl.id = ai.client_id " +
+                "left outer join m_group_roles gr on cl.id = gr.client_id " +
+                "left outer join m_code_value cv on cv.code_id = gr.role_cv_id and cv.is_active = true " +
+                "left outer join m_group_client gc on cl.id = gc.client_id " +
+                "left outer join m_loan l on cl.id = l.client_id " +
+                "left outer join m_loan_repayment_schedule lrs on l.id = lrs.loan_id " +
+                "left outer join m_loan_transaction lt on lt.loan_id = l.id and (lt.transaction_type_enum = 2 or lt.transaction_type_enum is null) " +
+                "where " +
+                "(gr.group_id = gc.group_id or gr.group_id is null) and gc.group_id = ? and lrs.duedate = ? " +
+                "group by gc.group_id, cl.id";
+
         List<Map<String, Object>> transactions = jdbcTemplate.query(sql, new LoanTransactionMapper(), new Object[]{groupId, date});
 
         sql = "select count(l.id) as num_loans, sum(lt.amount) as transaction_amount, sum(lrs.principal_amount+lrs.interest_amount) as due_amount, lrs.duedate from m_loan l left outer join m_loan_repayment_schedule lrs on lrs.loan_id = l.id left outer join m_loan_transaction lt on lt.loan_id = lrs.loan_id and lt.transaction_type_enum = 2 and lt.is_reversed=0 and lt.transaction_date = lrs.duedate " +
@@ -147,11 +173,17 @@ public class GenteraLoanTransactionsApiResource {
             final Long id = rs.getLong("id");
             final Long officeId = rs.getLong("office_id");
             final Long clientId = rs.getLong("client_id");
-            final Long loanId = rs.getLong("loan_id");
+            final Long loanId = rs.getLong("orig_loan_id");
             final String firstname = rs.getString("firstname");
             final String lastname = rs.getString("lastname");
+            final String additionalFamilyName = rs.getString("additional_family_name");
+            final String accountNumber = rs.getString("account_number");
             final String externalId = rs.getString("external_id");
+            final String role = rs.getString("role");
             final BigDecimal amount = rs.getBigDecimal("amount");
+            final BigDecimal principalAmount = rs.getBigDecimal("principal_amount");
+            final BigDecimal interestAmount = rs.getBigDecimal("interest_amount");
+            final BigDecimal dueAmount = rs.getBigDecimal("due_amount");
             final BigDecimal principalPortionDerived = rs.getBigDecimal("principal_portion_derived");
             final BigDecimal interestPortionDerived = rs.getBigDecimal("interest_portion_derived");
             final BigDecimal feeChargesPortionDerived = rs.getBigDecimal("fee_charges_portion_derived");
@@ -173,9 +205,15 @@ public class GenteraLoanTransactionsApiResource {
             transaction.put("clientId", clientId);
             transaction.put("firstname", firstname);
             transaction.put("lastname", lastname);
+            transaction.put("additionalFamilyName", additionalFamilyName);
+            transaction.put("accountNumber", accountNumber);
             transaction.put("externalId", externalId);
+            transaction.put("role", role);
             transaction.put("transactionType", transactionType);
             transaction.put("transactionDate", transactionDate);
+            transaction.put("principalAmount", principalAmount==null ? BigDecimal.ZERO : principalAmount);
+            transaction.put("interestAmount", interestAmount==null ? BigDecimal.ZERO : interestAmount);
+            transaction.put("dueAmount", dueAmount==null ? BigDecimal.ZERO : dueAmount);
             transaction.put("amount", amount==null ? BigDecimal.ZERO : amount);
             transaction.put("currencyData", currencyData);
             transaction.put("principalPortionDerived", principalPortionDerived==null ? BigDecimal.ZERO : principalPortionDerived);
@@ -189,31 +227,6 @@ public class GenteraLoanTransactionsApiResource {
             transaction.put("createdDate", createdDate);
             transaction.put("submittedOnDate", submittedOnDate);
             transaction.put("userId", userId);
-
-            /*
-            LoanTransactionData data = new LoanTransactionData(
-                    id,
-                    officeId,
-                    null,
-                    transactionType,
-                    null,
-                    currencyData,
-                    transactionDate,
-                    amount,
-                    principalPortionDerived,
-                    interestPortionDerived,
-                    feeChargesPortionDerived,
-                    penaltyChargesPortionDerived,
-                    overpaymentChargesPortionDerived,
-                    null,
-                    null,
-                    null,
-                    outstandingLoanBalanceDerived,
-                    unrecognizedIncomePortion,
-                    manuallyReversed);
-
-            return data;
-            */
 
             return transaction;
         }
