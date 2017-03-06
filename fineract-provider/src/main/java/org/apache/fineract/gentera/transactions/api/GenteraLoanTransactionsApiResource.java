@@ -201,7 +201,6 @@ public class GenteraLoanTransactionsApiResource {
                 LocalDate transactionDate = (LocalDate)t.get("transaction_date");
 
                 if(transactionDate.equals(scheduleDate)) {
-                    logger.warn(">>>>> Transaction mapped: {} -> {} = {}", new Object[]{s.get("duedate"), t.get("transaction_date"), t.get("amount")});
                     s.put("transaction_amount", t.get("amount"));
                     BigDecimal dueAmount = (BigDecimal)s.get("due_amount");
                     BigDecimal transactionAmount = (BigDecimal)t.get("amount");
@@ -281,7 +280,7 @@ public class GenteraLoanTransactionsApiResource {
 
         @Override
         public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-            final CurrencyData currencyData = null; // TODO: join with loan table
+            final CurrencyData currencyData = null; // TODO: remove; currency_code is enough; check with Ricardo
             final Long clientId = rs.getLong("client_id");
             final Long loanId = rs.getLong("orig_loan_id");
             final String firstname = rs.getString("firstname");
