@@ -257,6 +257,7 @@ public class GenteraLoanTransactionsApiResource {
             return schedule;
         }
     }
+
     private static final class LoanTransactionScheduleMapper implements RowMapper<Map<String, Object>> {
         @Override
         public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
