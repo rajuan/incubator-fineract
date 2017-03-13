@@ -71,6 +71,8 @@ public class GenteraStaffApiResource {
         List<Map<String, Object>> groups = new ArrayList<>();
 
         for(Long groupId : getGroups(staffId)) {
+            logger.info("Process group: {}", groupId);
+
             CalendarData calendar = this.calendarReadPlatformService.retrieveCollctionCalendarByEntity(groupId, CalendarEntityType.GROUPS.getValue());
             Collection<LocalDate> recurringDates;
             if(calendar!=null) {
@@ -88,7 +90,11 @@ public class GenteraStaffApiResource {
                     } else {
                         logger.warn("No schedule found for group: {}", groupId);
                     }
+                } else {
+                    logger.warn("No recurring dates for group: {}", groupId);
                 }
+            } else {
+                logger.warn("No calendar found for group: {}", groupId);
             }
         }
 
@@ -101,8 +107,8 @@ public class GenteraStaffApiResource {
 
     private List<Long> getGroups(Long staffId) {
         String sql = "select " +
-                "g.id, " +
-                "from m_loan l, m_group g, m_group_client gc, m_client, m_loan_repayment_schedule lrs, m_loan_repayment_schedule_history lrsh " +
+                "g.id " +
+                "from m_loan l, m_group g, m_group_client gc, m_client c, m_loan_repayment_schedule lrs, m_loan_repayment_schedule_history lrsh " +
                 "where " +
                 "l.group_id = g.id and gc.group_id = g.id and gc.client_id = c.id and lrs.loan_id = l.id and lrsh.loan_id = l.id and lrsh.duedate = lrs.duedate and " +
                 "g.staff_id = ? and l.loan_type_enum=3 and l.closedon_date is null and lrs.principal_writtenoff_derived is null " +
@@ -121,12 +127,16 @@ public class GenteraStaffApiResource {
                 "lrs.duedate " +
                 "from m_loan l, m_loan_repayment_schedule lrs, m_loan_repayment_schedule_history lrsh " +
                 "where  " +
-                "lrs.loan_id = l.id and lrsh.loan_id = l.id and lrsh.duedate = lrs.duedate and lrs.duedate = ? and " +
-                "l.group_id = ? and l.loan_type_enum=3 and l.closedon_date is null and lrs.principal_writtenoff_derived is null " +
+                "lrs.loan_id = l.id and lrsh.loan_id = l.id and lrsh.duedate = lrs.duedate and lrs.duedate = '" + date.toString("yyyy-MM-dd") + "' and " +
+                "l.group_id = " + groupId + " and l.loan_type_enum=3 and l.closedon_date is null and lrs.principal_writtenoff_derived is null " +
                 "group by l.group_id, lrs.duedate " +
                 "order by lrs.duedate";
 
-        List<Map<String, Object>> schedule = jdbcTemplate.query(sql, new LoanScheduleMapper(), new Object[]{groupId, date.toString("yyyy-MM-dd")});
+        logger.warn("Find schedule for : {}, {}", date.toString("yyyy-MM-dd"), groupId);
+        logger.warn("Find schedule for : \n{}", sql);
+
+        // List<Map<String, Object>> schedule = jdbcTemplate.query(sql, new LoanScheduleMapper(), new Object[]{date.toString("yyyy-MM-dd"), groupId});
+        List<Map<String, Object>> schedule = jdbcTemplate.query(sql, new LoanScheduleMapper());
         List<Map<String, Object>> transactions = getTransactions(groupId);
 
         for(Map<String, Object> s : schedule) {
@@ -161,6 +171,7 @@ public class GenteraStaffApiResource {
         return jdbcTemplate.query(sql, new LoanTransactionScheduleMapper(), new Object[]{groupId});
     }
 
+    /*
     private List<Map<String, Object>> getScheduleByStaff(Long staffId) {
         String sql = "select " +
                 "g.id, " +
@@ -179,6 +190,7 @@ public class GenteraStaffApiResource {
 
         return jdbcTemplate.query(sql, new LoanScheduleMapper(), new Object[]{staffId});
     }
+    */
 
     private Integer getGroupLoanCycle(Long groupId) {
         String sql = "select " +
