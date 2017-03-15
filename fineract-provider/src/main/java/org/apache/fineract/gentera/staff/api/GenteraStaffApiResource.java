@@ -71,7 +71,7 @@ public class GenteraStaffApiResource {
         List<Map<String, Object>> groups = new ArrayList<>();
 
         for(Long groupId : getGroups(staffId)) {
-            logger.info("Process group: {}", groupId);
+            logger.error("Process group: {}", groupId);
 
             CalendarData calendar = this.calendarReadPlatformService.retrieveCollctionCalendarByEntity(groupId, CalendarEntityType.GROUPS.getValue());
             Collection<LocalDate> recurringDates;
@@ -87,14 +87,15 @@ public class GenteraStaffApiResource {
                         s.put("id", groupId);
                         s.put("loanCycle", getGroupLoanCycle(groupId));
                         groups.add(s);
+                        logger.error("Add group: {}", s);
                     } else {
-                        logger.warn("No schedule found for group: {}", groupId);
+                        logger.error("No schedule found for group: {}", groupId);
                     }
                 } else {
-                    logger.warn("No recurring dates for group: {}", groupId);
+                    logger.error("No recurring dates for group: {}", groupId);
                 }
             } else {
-                logger.warn("No calendar found for group: {}", groupId);
+                logger.error("No calendar found for group: {}", groupId);
             }
         }
 
@@ -106,13 +107,18 @@ public class GenteraStaffApiResource {
     }
 
     private List<Long> getGroups(Long staffId) {
+        logger.error(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Search by staff ID: {}", staffId);
         String sql = "select " +
                 "g.id " +
-                "from m_loan l, m_group g, m_group_client gc, m_client c, m_loan_repayment_schedule lrs, m_loan_repayment_schedule_history lrsh " +
+                "from m_group g " +
+                "left outer join m_loan l on l.group_id = g.id " +
+                "left outer join m_group_client gc on gc.group_id = g.id " +
+                "left outer join m_client c on gc.client_id = c.id " +
+                "left outer join m_loan_repayment_schedule lrs on lrs.loan_id = l.id " +
+                "left outer join m_loan_repayment_schedule_history lrsh on lrsh.loan_id = l.id and (lrsh.duedate = lrs.duedate or lrsh.duedate is null) " +
                 "where " +
-                "l.group_id = g.id and gc.group_id = g.id and gc.client_id = c.id and lrs.loan_id = l.id and lrsh.loan_id = l.id and lrsh.duedate = lrs.duedate and " +
-                "g.staff_id = ? and l.loan_type_enum=3 and l.closedon_date is null and lrs.principal_writtenoff_derived is null " +
-                "group by g.id ";
+                "g.staff_id = ? and (l.loan_type_enum=3 or l.loan_type_enum is null) and l.closedon_date is null and lrs.principal_writtenoff_derived is null " +
+                "group by g.id";
 
         return jdbcTemplate.queryForList(sql, Long.class, new Object[]{staffId});
     }
