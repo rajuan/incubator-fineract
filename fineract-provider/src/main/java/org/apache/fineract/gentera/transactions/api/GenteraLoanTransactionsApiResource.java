@@ -36,7 +36,9 @@ import org.apache.fineract.portfolio.loanaccount.service.LoanReadPlatformService
 import org.apache.fineract.portfolio.meeting.data.MeetingData;
 import org.apache.fineract.portfolio.meeting.service.MeetingReadPlatformService;
 import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatformService;
+import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
+import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,16 +46,14 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
+import serp.bytecode.Local;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Path("/gentera/groups/{groupId}/transactions")
 @Component
@@ -102,21 +102,51 @@ public class GenteraLoanTransactionsApiResource {
     @GET
     public String groupMeetingTransactions(@PathParam("groupId") final Long groupId, @QueryParam("date") final String date) {
         GroupGeneralData group = groupReadPlatformService.retrieveOne(groupId);
+        /*
         CalendarData calendar = this.calendarReadPlatformService.retrieveCollctionCalendarByEntity(groupId, CalendarEntityType.GROUPS.getValue());
         Collection<LocalDate> recurringDates = null;
+        DateTime d = DateTime.parse(date, DateTimeFormat.forPattern("yyyy-MM-dd"));
         if(calendar!=null) {
-            recurringDates = this.calendarReadPlatformService.generateRecurringDates(calendar, false, LocalDate.now().plusMonths(1)); // NOTE: a month should be enough
+            // TODO: maybe -1 day is necessary
+            recurringDates = this.calendarReadPlatformService.generateRecurringDates(calendar, false, d.plusMonths(1).toLocalDate()); // NOTE: a month should be enough
         }
         Collection<MeetingData> meetings = meetingReadPlatformService.retrieveMeetingsByEntity(groupId, CalendarEntityType.GROUPS.getValue(), 100);
+        */
+
+        List<Map<String, Object>> schedule = getSchedule(groupId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("group", group);
-        result.put("meetings", meetings);
+        // result.put("meetings", meetings);
         result.put("transactions", getTransactions(groupId, date));
-        result.put("schedule", getSchedule(groupId));
-        if(recurringDates!=null && !recurringDates.isEmpty()) {
-            result.put("nextMeeting", recurringDates.iterator().next());
+        result.put("schedule", schedule);
+
+        LocalDate now = LocalDate.now();
+        LocalDate nextMeeting = null;
+
+        for(Map<String, Object> s : schedule) {
+            LocalDate duedate = (LocalDate)s.get("duedate_alt");
+            // BigDecimal dueAmount = (BigDecimal)s.get("due_amount");
+
+            if(now.equals(duedate)) {
+                nextMeeting = duedate;
+                break;
+            } else if(duedate.isAfter(now)) {
+                nextMeeting = duedate;
+                break;
+            }
         }
+
+        result.put("nextMeeting", nextMeeting.toString("yyyy-MM-dd"));
+        logger.info("Next meeting: {}", nextMeeting.toString("yyyy-MM-dd"));
+
+        /*
+        if(recurringDates!=null && !recurringDates.isEmpty()) {
+            recurringDates.iterator().next();
+            result.put("nextMeeting", recurringDates.iterator().next());
+            logger.info("Next meeting: {}", result.get("nextMeeting"));
+        }
+        */
 
         return this.toApiJsonSerializer.serialize(result);
     }
