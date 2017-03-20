@@ -4,7 +4,7 @@ CURRENT_DIR=$(pwd)
 
 GENTERA_DIR=$CURRENT_DIR/build/gentera
 TOMCAT_MAJOR=7
-TOMCAT_VERSION=7.0.75
+TOMCAT_VERSION=7.0.76
 #TOMCAT_TGZ_URL=https://www.apache.org/dyn/closer.cgi?action=download&filename=tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz
 #TOMCAT_TGZ_URL=http://mirrors.fe.up.pt/pub/apache/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz
 TOMCAT_TGZ_URL=http://www-eu.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz
