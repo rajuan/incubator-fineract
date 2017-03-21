@@ -18,6 +18,7 @@
  */
 package org.apache.fineract.gentera.transactions.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.fineract.commands.service.PortfolioCommandSourceWritePlatformService;
 import org.apache.fineract.infrastructure.core.api.ApiRequestParameterHelper;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
@@ -39,6 +40,8 @@ import org.apache.fineract.portfolio.paymenttype.service.PaymentTypeReadPlatform
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.DateTimeParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,58 +103,57 @@ public class GenteraLoanTransactionsApiResource {
     }
 
     @GET
-    public String groupMeetingTransactions(@PathParam("groupId") final Long groupId, @QueryParam("date") final String date) {
+    public String groupMeetingTransactions(@PathParam("groupId") final Long groupId, @QueryParam("date") @DefaultValue("") String date) {
+        Map<String, Object> result = new HashMap<>();
+
         GroupGeneralData group = groupReadPlatformService.retrieveOne(groupId);
-        /*
-        CalendarData calendar = this.calendarReadPlatformService.retrieveCollctionCalendarByEntity(groupId, CalendarEntityType.GROUPS.getValue());
-        Collection<LocalDate> recurringDates = null;
-        DateTime d = DateTime.parse(date, DateTimeFormat.forPattern("yyyy-MM-dd"));
-        if(calendar!=null) {
-            // TODO: maybe -1 day is necessary
-            recurringDates = this.calendarReadPlatformService.generateRecurringDates(calendar, false, d.plusMonths(1).toLocalDate()); // NOTE: a month should be enough
-        }
-        Collection<MeetingData> meetings = meetingReadPlatformService.retrieveMeetingsByEntity(groupId, CalendarEntityType.GROUPS.getValue(), 100);
-        */
+        result.put("group", group);
 
         List<Map<String, Object>> schedule = getSchedule(groupId);
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("group", group);
-        // result.put("meetings", meetings);
-        result.put("transactions", getTransactions(groupId, date));
         result.put("schedule", schedule);
 
         LocalDate now = LocalDate.now();
         LocalDate nextMeeting = null;
+        LocalDate paymentDate = null;
 
         for(Map<String, Object> s : schedule) {
             LocalDate duedate = (LocalDate)s.get("duedate_alt");
-            // BigDecimal dueAmount = (BigDecimal)s.get("due_amount");
+            LocalDate pd = (LocalDate)s.get("paymentdate");
+            BigDecimal dueAmount = (BigDecimal)s.get("due_amount");
 
             if(now.equals(duedate)) {
+                logger.warn(">>> WAS SAME DATE: {} {}", dueAmount, duedate);
                 nextMeeting = duedate;
+                paymentDate = pd;
+                break;
+            } else if(dueAmount.compareTo(BigDecimal.ZERO)>0) {
+                logger.warn(">>> WAS NON ZERO: {} {}", dueAmount, duedate);
+                nextMeeting = duedate;
+                paymentDate = pd;
                 break;
             } else if(duedate.isAfter(now)) {
+                logger.warn(">>> WAS AFTER DATE: {} {}", dueAmount, duedate);
                 nextMeeting = duedate;
+                paymentDate = pd;
                 break;
             }
         }
 
-        result.put("nextMeeting", nextMeeting.toString("yyyy-MM-dd"));
-        logger.info("Next meeting: {}", nextMeeting.toString("yyyy-MM-dd"));
+        result.put("nextMeeting", nextMeeting);
 
-        /*
-        if(recurringDates!=null && !recurringDates.isEmpty()) {
-            recurringDates.iterator().next();
-            result.put("nextMeeting", recurringDates.iterator().next());
-            logger.info("Next meeting: {}", result.get("nextMeeting"));
+        if(StringUtils.isEmpty(date)) {
+            result.put("transactions", getTransactions(groupId, paymentDate, nextMeeting));
+        } else {
+            LocalDate d = DateTimeFormat.forPattern("yyyy-MM-dd").parseLocalDate(date);
+            // TODO: we should check for holidays and move to next
+            result.put("transactions", getTransactions(groupId, d, d));
         }
-        */
 
         return this.toApiJsonSerializer.serialize(result);
     }
 
-    private List<Map<String, Object>> getTransactions(Long groupId, String date) {
+    private List<Map<String, Object>> getTransactions(Long groupId, LocalDate paymentdate, LocalDate date) {
+        logger.warn(">> Retrieve group {} at {}", groupId, date);
         String sql = "select distinct " +
                 "gc.group_id, " +
                 "gc.client_id, " +
@@ -175,9 +177,9 @@ public class GenteraLoanTransactionsApiResource {
                 "left outer join m_group_client gc on cl.id = gc.client_id  " +
                 "left outer join m_loan l on cl.id = l.client_id  " +
                 "left outer join m_loan_repayment_schedule_history lrs on l.id = lrs.loan_id  " +
-                "left outer join m_loan_transaction lt on lt.loan_id = l.id and (lt.transaction_type_enum = 2 or lt.transaction_type_enum is null) and (lt.is_reversed = false or lt.is_reversed is null)  " +
+                "left outer join m_loan_transaction lt on lt.loan_id = l.id and (lt.transaction_type_enum = 2 or lt.transaction_type_enum is null) and (lt.is_reversed = false or lt.is_reversed is null) and (lt.transaction_date = ? or lt.transaction_date is null) " +
                 "where  " +
-                "(gr.group_id = gc.group_id or gr.group_id is null) and gc.group_id = ? and lrs.duedate = ? and (lt.transaction_date = ? or lt.transaction_date is null) and l.closedon_date is null and l.writtenoffon_date is null  " +
+                "(gr.group_id = gc.group_id or gr.group_id is null) and gc.group_id = ? and lrs.duedate = ? and l.closedon_date is null and l.writtenoffon_date is null  " +
                 "group by  " +
                 "gc.group_id, " +
                 "gc.client_id, " +
@@ -190,7 +192,7 @@ public class GenteraLoanTransactionsApiResource {
                 "ai.account_number, " +
                 "l.id";
 
-        return jdbcTemplate.query(sql, new LoanTransactionMapper(getClientRoles(groupId)), new Object[]{groupId, date, date});
+        return jdbcTemplate.query(sql, new LoanTransactionMapper(getClientRoles(groupId)), new Object[]{paymentdate.toString("yyyy-MM-dd"), groupId, date.toString("yyyy-MM-dd")});
     }
 
     private List<Map<String, Object>> getTransactions(Long groupId) {
@@ -213,13 +215,14 @@ public class GenteraLoanTransactionsApiResource {
                 "sum(lrs.principal_amount+lrs.interest_amount) as due_amount, " +
                 "sum(lrsh.principal_amount+lrsh.interest_amount) as orig_due_amount, " +
                 "sum((lrs.principal_amount+lrs.interest_amount)-(lrsh.principal_amount+lrsh.interest_amount)) as overpaid_amount, " +
-                "lrs.duedate " +
+                "lrsh.duedate, " +
+                "lrs.duedate as paymentdate " +
                 "from m_loan l, m_loan_repayment_schedule lrs, m_loan_repayment_schedule_history lrsh " +
-                "where  " +
-                "lrs.loan_id = l.id and lrsh.loan_id = l.id and lrsh.duedate = lrs.duedate and " +
+                "where " +
+                "lrs.loan_id = l.id and lrsh.loan_id = l.id and lrsh.installment = lrs.installment and " +
                 "l.group_id = ? and l.loan_type_enum=3 and l.closedon_date is null and lrs.principal_writtenoff_derived is null " +
-                "group by l.group_id, lrs.duedate " +
-                "order by lrs.duedate";
+                "group by l.group_id, lrsh.duedate, lrs.duedate " +
+                "order by lrsh.duedate, lrs.duedate";
 
         List<Map<String, Object>> schedule = jdbcTemplate.query(sql, new LoanScheduleMapper(), new Object[]{groupId});
         List<Map<String, Object>> transactions = getTransactions(groupId);
@@ -228,14 +231,21 @@ public class GenteraLoanTransactionsApiResource {
             s.put("transaction_amount", BigDecimal.ZERO);
             for(Map<String, Object> t : transactions) {
                 LocalDate scheduleDate = (LocalDate)s.get("duedate_alt");
+                LocalDate paymentdate = (LocalDate)s.get("paymentdate");
                 LocalDate transactionDate = (LocalDate)t.get("transaction_date");
 
-                if(transactionDate.equals(scheduleDate)) {
+                logger.warn("Comparing dates: {} <-> {}", paymentdate, transactionDate);
+
+                if(transactionDate.equals(paymentdate)) {
+                    logger.warn("Has transaction amount: {}", t.get("amount"));
                     s.put("transaction_amount", t.get("amount"));
                     BigDecimal dueAmount = (BigDecimal)s.get("due_amount");
                     BigDecimal transactionAmount = (BigDecimal)t.get("amount");
                     s.put("due_amount", dueAmount.subtract(transactionAmount));
+                    logger.warn("Has due amount: {}", dueAmount.subtract(transactionAmount));
                     break;
+                } else {
+                    logger.warn("Transaction skipped: {}", transactionDate);
                 }
             }
         }
@@ -275,6 +285,7 @@ public class GenteraLoanTransactionsApiResource {
             final BigDecimal origDueAmount = rs.getBigDecimal("orig_due_amount");
             final BigDecimal overpaidAmount = rs.getBigDecimal("overpaid_amount");
             final LocalDate dueDateAlt = JdbcSupport.getLocalDate(rs, "duedate");
+            final LocalDate paymentdate = JdbcSupport.getLocalDate(rs, "paymentdate");
 
             Map<String, Object> schedule = new HashMap<>();
             schedule.put("num_loans", numLoans);
@@ -283,6 +294,7 @@ public class GenteraLoanTransactionsApiResource {
             // schedule.put("overpaid_amount", overpaidAmount.signum() == -1 ? BigDecimal.ZERO : overpaidAmount);
             schedule.put("duedate", rs.getDate("duedate"));
             schedule.put("duedate_alt", dueDateAlt);
+            schedule.put("paymentdate", paymentdate);
 
             return schedule;
         }
