@@ -68,28 +68,35 @@ public class GenteraStaffApiResource {
 
     @GET
     public String staffGroups(@PathParam("staffId") final Long staffId) {
-        List<Map<String, Object>> schedules = getSchedule(staffId);
-
         List<Map<String, Object>> groups = new ArrayList<>();
 
-        Object currentGroup = null;
+        List<Map<String, Object>> schedules = getSchedule(staffId);
 
-        List<Map<String, Object>> tmp = new ArrayList<>();
+        if(schedules!=null && !schedules.isEmpty()) {
+            Object currentGroup = null;
 
-        for(Map<String, Object> s : schedules) {
-            if(s!=null  &&
-                    !s.isEmpty()) {
-                if(!s.get("groupId").equals(currentGroup) &&
-                        !tmp.isEmpty()) {
-                    Map<String, Object> t = nextMeeting((Long)tmp.get(0).get("groupId"), tmp);
-                    t.put("loanCycle", getGroupLoanCycle((Long)t.get("groupId")));
-                    groups.add(t);
-                    logger.warn(">>> Selected group: {}", t.get("groupId"));
-                    tmp = new ArrayList<>();
+            List<Map<String, Object>> tmp = new ArrayList<>();
+
+            for(Map<String, Object> s : schedules) {
+                if(s!=null  && !s.isEmpty()) {
+                    if(!s.get("groupId").equals(currentGroup) && !tmp.isEmpty()) {
+                        Map<String, Object> t = nextMeeting((Long)tmp.get(0).get("groupId"), tmp);
+                        t.put("loanCycle", getGroupLoanCycle((Long)t.get("groupId")));
+                        groups.add(t);
+                        logger.warn(">>> Selected group: {}", t.get("groupId"));
+                        tmp = new ArrayList<>();
+                    }
+                    logger.warn("Adding group: {}", s.get("groupId"));
+                    tmp.add(s);
+                    currentGroup = s.get("groupId");
                 }
-                logger.warn("Adding group: {}", s.get("groupId"));
-                tmp.add(s);
-                currentGroup = s.get("groupId");
+            }
+
+            if(!tmp.isEmpty()) {
+                Map<String, Object> t = nextMeeting((Long)tmp.get(0).get("groupId"), tmp);
+                t.put("loanCycle", getGroupLoanCycle((Long)t.get("groupId")));
+                groups.add(t);
+                logger.warn(">>> Selected group: {}", t.get("groupId"));
             }
         }
 
