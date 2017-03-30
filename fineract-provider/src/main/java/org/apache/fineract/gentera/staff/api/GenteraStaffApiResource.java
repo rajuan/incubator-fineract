@@ -83,10 +83,9 @@ public class GenteraStaffApiResource {
                         Map<String, Object> t = nextMeeting((Long)tmp.get(0).get("groupId"), tmp);
                         t.put("loanCycle", getGroupLoanCycle((Long)t.get("groupId")));
                         groups.add(t);
-                        logger.warn(">>> Selected group: {}", t.get("groupId"));
+                        logger.debug(">>> Selected group: {}", t.get("groupId"));
                         tmp = new ArrayList<>();
                     }
-                    logger.warn("Adding group: {}", s.get("groupId"));
                     tmp.add(s);
                     currentGroup = s.get("groupId");
                 }
@@ -96,7 +95,7 @@ public class GenteraStaffApiResource {
                 Map<String, Object> t = nextMeeting((Long)tmp.get(0).get("groupId"), tmp);
                 t.put("loanCycle", getGroupLoanCycle((Long)t.get("groupId")));
                 groups.add(t);
-                logger.warn(">>> Selected group: {}", t.get("groupId"));
+                logger.debug(">>> Selected group: {}", t.get("groupId"));
             }
         }
 
