@@ -10,6 +10,10 @@ TOMCAT_VERSION=7.0.76
 TOMCAT_TGZ_URL=http://www-eu.apache.org/dist/tomcat/tomcat-$TOMCAT_MAJOR/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz
 TOMCAT_DIR=$GENTERA_DIR/apache-tomcat-$TOMCAT_VERSION
 
+./gentera-stop.sh
+
+rm -rf build/gentera*
+
 ./gradlew dist
 
 mkdir -p $GENTERA_DIR/.mifosx
