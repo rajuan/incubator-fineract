@@ -18,12 +18,10 @@
  */
 package org.apache.fineract.gentera.staff.api;
 
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.fineract.infrastructure.core.domain.JdbcSupport;
 import org.apache.fineract.infrastructure.core.serialization.DefaultToApiJsonSerializer;
 import org.apache.fineract.infrastructure.core.service.RoutingDataSource;
 import org.apache.fineract.organisation.staff.service.StaffReadPlatformService;
-import org.apache.fineract.portfolio.calendar.service.CalendarReadPlatformService;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionData;
 import org.joda.time.LocalDate;
 import org.slf4j.Logger;
@@ -34,13 +32,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
-import javax.swing.text.StyledEditorKit;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Path("/gentera/staff/{staffId}/groups")
 @Component
@@ -52,52 +51,20 @@ public class GenteraStaffApiResource {
 
     private final JdbcTemplate jdbcTemplate;
     private final DefaultToApiJsonSerializer<LoanTransactionData> toApiJsonSerializer;
-    private final CalendarReadPlatformService calendarReadPlatformService;
     private final StaffReadPlatformService staffReadPlatformService;
 
     @Autowired
     public GenteraStaffApiResource(final RoutingDataSource dataSource,
                                    final DefaultToApiJsonSerializer<LoanTransactionData> toApiJsonSerializer,
-                                   final CalendarReadPlatformService calendarReadPlatformService,
                                    final StaffReadPlatformService staffReadPlatformService) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.toApiJsonSerializer = toApiJsonSerializer;
-        this.calendarReadPlatformService = calendarReadPlatformService;
         this.staffReadPlatformService = staffReadPlatformService;
     }
 
     @GET
     public String staffGroups(@PathParam("staffId") final Long staffId) {
-        List<Map<String, Object>> groups = new ArrayList<>();
-
-        List<Map<String, Object>> schedules = getSchedule(staffId);
-
-        if(schedules!=null && !schedules.isEmpty()) {
-            Object currentGroup = null;
-
-            List<Map<String, Object>> tmp = new ArrayList<>();
-
-            for(Map<String, Object> s : schedules) {
-                if(s!=null  && !s.isEmpty()) {
-                    if(!s.get("groupId").equals(currentGroup) && !tmp.isEmpty()) {
-                        Map<String, Object> t = nextMeeting((Long)tmp.get(0).get("groupId"), tmp);
-                        t.put("loanCycle", getGroupLoanCycle((Long)t.get("groupId")));
-                        groups.add(t);
-                        logger.debug(">>> Selected group: {}", t.get("groupId"));
-                        tmp = new ArrayList<>();
-                    }
-                    tmp.add(s);
-                    currentGroup = s.get("groupId");
-                }
-            }
-
-            if(!tmp.isEmpty()) {
-                Map<String, Object> t = nextMeeting((Long)tmp.get(0).get("groupId"), tmp);
-                t.put("loanCycle", getGroupLoanCycle((Long)t.get("groupId")));
-                groups.add(t);
-                logger.debug(">>> Selected group: {}", t.get("groupId"));
-            }
-        }
+        List<Map<String, Object>> groups = getGroupsNextMeetingDataForStaff(staffId);
 
         Map<String, Object> staffResult = new HashMap<>();
         staffResult.put("staff", staffReadPlatformService.retrieveStaff(staffId));
@@ -106,129 +73,70 @@ public class GenteraStaffApiResource {
         return this.toApiJsonSerializer.serialize(staffResult);
     }
 
-    private Map<String, Object> nextMeeting(Long groupId, List<Map<String, Object>> schedules) {
-        LocalDate now = LocalDate.now();
-
-        for(Map<String, Object> s : schedules) {
-            LocalDate duedate = (LocalDate)s.get("duedateAlt");
-            BigDecimal dueAmount = (BigDecimal)s.get("dueAmount");
-
-            List<Map<String, Object>> transactions = getTransactions(groupId);
-            for(Map<String, Object> t : transactions) {
-                LocalDate paymentdate = (LocalDate)s.get("paymentdate");
-                LocalDate transactionDate = (LocalDate)t.get("transaction_date");
-
-                logger.warn("Comparing dates: {} <-> {}", paymentdate, transactionDate);
-
-                if(transactionDate.equals(paymentdate)) {
-                    logger.warn("Has transaction amount: {}", t.get("amount"));
-                    BigDecimal transactionAmount = (BigDecimal)t.get("amount");
-                    dueAmount = dueAmount.subtract(transactionAmount);
-                    s.put("transactionAmount", transactionAmount);
-                    s.put("dueAmount", dueAmount);
-                    logger.warn("Has due amount: {}", dueAmount.subtract(transactionAmount));
-                    break;
-                } else {
-                    logger.warn("Transaction skipped: {}", transactionDate);
-                }
-            }
-
-            if(now.equals(duedate)) {
-                logger.warn(">>> WAS SAME DATE: {} {}", dueAmount, duedate);
-                return s;
-            } else if(dueAmount!=null && dueAmount.compareTo(BigDecimal.ZERO)>0) {
-                logger.warn(">>> WAS NON ZERO: {} {}", dueAmount, duedate);
-                return s;
-            } else if(dueAmount!=null && duedate.isAfter(now)) {
-                logger.warn(">>> WAS AFTER DATE: {} {}", dueAmount, duedate);
-                return s;
-            }
-        }
-
-        return Collections.emptyMap();
-    }
-
-    private List<Map<String, Object>> getSchedule(Long staffId) {
-        String sql = "select " +
-                "l.group_id, " +
-                "count(l.id) as num_loans, " +
-                "sum(lrs.principal_amount+lrs.interest_amount) as due_amount, " +
-                "sum(lrsh.principal_amount+lrsh.interest_amount) as orig_due_amount, " +
-                "sum((lrs.principal_amount+lrs.interest_amount)-(lrsh.principal_amount+lrsh.interest_amount)) as overpaid_amount, " +
-                "lrs.duedate, " +
-                "lrs.duedate as paymentdate " +
-                "from m_loan l, m_group g, m_loan_repayment_schedule lrs, m_loan_repayment_schedule_history lrsh " +
-                "where " +
-                "lrs.loan_id = l.id and lrsh.loan_id = l.id and g.id = l.group_id and lrsh.installment = lrs.installment and " +
-                "g.staff_id = ? and l.loan_type_enum=3 and l.closedon_date is null and lrs.principal_writtenoff_derived is null " +
-                "group by l.group_id, lrs.duedate " +
-                "order by g.id, lrs.duedate";
-
-        return jdbcTemplate.query(sql, new LoanScheduleMapper(), new Object[]{staffId});
-    }
-
-    private List<Map<String, Object>> getTransactions(Long groupId) {
-        String sql = "select " +
-                "lt.transaction_date, " +
-                "sum(lt.amount) as amount " +
-                "from m_loan l " +
-                "left outer join m_loan_transaction lt on lt.loan_id = l.id " +
-                "where l.group_id = ? and l.loan_type_enum=3 and l.closedon_date is null and l.writtenoffon_date is null and lt.is_reversed = false and lt.transaction_type_enum = 2 " +
-                "group by lt.transaction_date " +
-                "order by lt.transaction_date";
-
-        return jdbcTemplate.query(sql, new LoanTransactionScheduleMapper(), new Object[]{groupId});
-    }
-
-    private Integer getGroupLoanCycle(Long groupId) {
-        String sql = "select " +
-                "max(lc.loan_cycle) as loan_cycle " +
-                "from " +
-                "m_loan l, loan_cycle lc " +
-                "where " +
-                "l.client_id = lc.client_id and l.group_id = ? " +
-                "group by " +
-                "l.group_id " +
-                "order by " +
-                "l.disbursedon_date desc";
-
-        return jdbcTemplate.queryForObject(sql, Integer.class, new Object[]{groupId});
-    }
-
-    private static final class LoanTransactionScheduleMapper implements RowMapper<Map<String, Object>> {
-        @Override
-        public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-            final BigDecimal amount = rs.getBigDecimal("amount");
-            final LocalDate transactionDate = JdbcSupport.getLocalDate(rs, "transaction_date");
-
-            Map<String, Object> schedule = new HashMap<>();
-            schedule.put("amount", amount);
-            schedule.put("transaction_date", transactionDate);
-
-            return schedule;
-        }
+    private List<Map<String,Object>> getGroupsNextMeetingDataForStaff(Long staffId) {
+        StringBuilder sql = new StringBuilder("select tmp.group_id, " )
+                .append("tmp.duedate, " )
+                .append("count(tmp.id) as num_loans, " )
+                .append("sum(tmp.orig_due_amount) as orig_due_amount, " )
+                .append("sum(paid_amount) as paid_amount, " )
+                .append("sum(writtenoff_amount) as writtenoff_amount, " )
+                .append("sum(waived_amount) as waived_amount, " )
+                .append("(select  " )
+                .append("max(lc.loan_cycle) as loan_cycle  " )
+                .append("from  " )
+                .append("m_loan l1, loan_cycle lc  " )
+                .append("where  " )
+                .append("l1.client_id = lc.client_id and l1.group_id = tmp.group_id " )
+                .append("group by  " )
+                .append("l1.group_id) as loan_cycle " )
+                .append("from (select l.group_id,  " )
+                .append("min(sch.duedate) as duedate,  " )
+                .append("l.id as id,  " )
+                .append("ifnull(sch.principal_amount,0) + ifnull(sch.interest_amount,0)   " )
+                .append(" + ifnull(sch.fee_charges_amount,0) + ifnull(sch.penalty_charges_amount,0) as orig_due_amount,  " )
+                .append("ifnull(sch.principal_completed_derived,0) + ifnull(sch.interest_completed_derived,0)   " )
+                .append(" + ifnull(sch.fee_charges_completed_derived,0) + ifnull(sch.penalty_charges_completed_derived,0) as paid_amount,  " )
+                .append("ifnull(sch.interest_writtenoff_derived,0)   " )
+                .append(" + ifnull(sch.fee_charges_writtenoff_derived,0) + ifnull(sch.penalty_charges_writtenoff_derived,0) as writtenoff_amount,  " )
+                .append("ifnull(sch.interest_waived_derived,0)   " )
+                .append(" + ifnull(sch.fee_charges_waived_derived,0) + ifnull(sch.penalty_charges_waived_derived,0) as waived_amount  " )
+                .append("from m_group as g " )
+                .append("join m_loan as l on l.group_id = g.id " )
+                .append("join m_loan_repayment_schedule as sch on sch.loan_id = l.id  " )
+                .append("where l.loan_status_id = 300  " )
+                .append("and l.loan_type_enum = 3  " )
+                .append("and sch.duedate >= now() " )
+                .append("and g.staff_id = ? " )
+                .append("group by g.id, l.id) as tmp " )
+                .append("group by tmp.group_id " )
+                .append("order by tmp.duedate asc ");
+        return jdbcTemplate.query(sql.toString(), new LoanScheduleMapper(), new Object[]{staffId});
     }
 
     private static final class LoanScheduleMapper implements RowMapper<Map<String, Object>> {
         @Override
         public Map<String, Object> mapRow(ResultSet rs, int rowNum) throws SQLException {
-
             final Long groupId = rs.getLong("group_id");
             final Long numLoans = rs.getLong("num_loans");
-            final BigDecimal dueAmount = rs.getBigDecimal("due_amount");
+            final LocalDate dueDate = JdbcSupport.getLocalDate(rs, "duedate");
             final BigDecimal origDueAmount = rs.getBigDecimal("orig_due_amount");
-            // final BigDecimal overpaidAmount = rs.getBigDecimal("overpaid_amount");
-            final LocalDate dueDateAlt = JdbcSupport.getLocalDate(rs, "duedate");
-            final LocalDate paymentdate = JdbcSupport.getLocalDate(rs, "paymentdate");
+            final BigDecimal paidAmount = rs.getBigDecimal("paid_amount");
+            final BigDecimal writtenOffAmount = rs.getBigDecimal("writtenoff_amount");
+            final BigDecimal waivedAmount = rs.getBigDecimal("waived_amount");
+            final Integer loanCycle = rs.getInt("loan_cycle");
 
             Map<String, Object> schedule = new HashMap<>();
             schedule.put("groupId", groupId);
             schedule.put("numLoans", numLoans);
-            schedule.put("dueAmount", dueAmount.compareTo(origDueAmount) == -1 ? dueAmount : origDueAmount);
             schedule.put("origDueAmount", origDueAmount);
+            schedule.put("dueAmount", origDueAmount.subtract(paidAmount).subtract(writtenOffAmount).subtract(waivedAmount));
+            schedule.put("transactionAmount", paidAmount);
+            schedule.put("writtenOffAmount", writtenOffAmount);
+            schedule.put("waivedAmount", waivedAmount);
             schedule.put("duedate", rs.getDate("duedate"));
-            schedule.put("duedateAlt", dueDateAlt);
-            schedule.put("paymentdate", paymentdate);
+            schedule.put("duedateAlt", dueDate);
+            schedule.put("paymentdate", dueDate);
+            schedule.put("loanCycle", loanCycle);
 
             return schedule;
         }

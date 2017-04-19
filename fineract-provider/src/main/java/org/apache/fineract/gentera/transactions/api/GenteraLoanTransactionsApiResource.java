@@ -99,18 +99,8 @@ public class GenteraLoanTransactionsApiResource {
             LocalDate pd = (LocalDate)s.get("paymentdate");
             BigDecimal dueAmount = (BigDecimal)s.get("due_amount");
 
-            if(now.equals(duedate)) {
+            if(!duedate.isBefore(now)) {
                 logger.warn(">>> WAS SAME DATE: {} {}", dueAmount, duedate);
-                nextMeeting = duedate;
-                paymentDate = pd;
-                break;
-            } else if(dueAmount.compareTo(BigDecimal.ZERO)>0) {
-                logger.warn(">>> WAS NON ZERO: {} {}", dueAmount, duedate);
-                nextMeeting = duedate;
-                paymentDate = pd;
-                break;
-            } else if(duedate.isAfter(now)) {
-                logger.warn(">>> WAS AFTER DATE: {} {}", dueAmount, duedate);
                 nextMeeting = duedate;
                 paymentDate = pd;
                 break;
